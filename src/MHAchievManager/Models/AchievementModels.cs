@@ -416,6 +416,7 @@ namespace MHAchievManager.Models
     {
         [DisplayName("Reward Prototype")]
         [TypeConverter(typeof(GuidPrototypeConverter))]
+        [Editor(typeof(GuidPrototypeEditor), typeof(UITypeEditor))]
         public long RewardPrototype { get; set; }
         [Browsable(false)]
         public List<EventData> EventData { get; set; }

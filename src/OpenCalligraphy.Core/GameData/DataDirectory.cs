@@ -168,6 +168,11 @@ namespace OpenCalligraphy.Core.GameData
             return record.Blueprint;
         }
 
+        public IEnumerable<KeyValuePair<PrototypeGuid, PrototypeId>> GetGuidPrototypes()
+        {
+            return _prototypeGuidToDataRefDict;
+        }
+
         public PrototypeId GetPrototypeIdByGuid(PrototypeGuid protoGuid)
         {
             if (_prototypeGuidToDataRefDict.TryGetValue(protoGuid, out var protoId))

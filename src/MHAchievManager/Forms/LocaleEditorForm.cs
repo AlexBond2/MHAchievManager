@@ -1,4 +1,5 @@
-﻿using MHAchievManager.Locale;
+﻿using MHAchievManager.Forms;
+using MHAchievManager.Locale;
 using MHAchievManager.Services;
 using MHAchievManager.UI;
 using OpenCalligraphy.Core.GameData;
@@ -110,10 +111,10 @@ public class LocaleEditorForm : Form
 
         Controls.AddRange(
         [
+            tabLanguages,
             lblId,
             txtSelectedId,
             btnCreateNew,
-            tabLanguages,
             btnSave,
             btnCancel
         ]);

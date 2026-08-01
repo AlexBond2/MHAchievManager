@@ -65,7 +65,7 @@ namespace MHAchievManager.Models
 
                 if (numericVal == 0) return "Invalid";
 
-                if (DataDirectory.Instance != null)
+                if (DataDirectory.Instance != null && DataDirectory.Instance.DataChecksum != 0)
                 {
                     string assetPath = assetId.GetName();
                     if (!string.IsNullOrEmpty(assetPath)) return assetPath;
@@ -91,7 +91,7 @@ namespace MHAchievManager.Models
             {
                 if (protoGuidVal == 0) return "";
 
-                if (DataDirectory.Instance != null)
+                if (DataDirectory.Instance != null && DataDirectory.Instance.DataChecksum != 0)
                 {
                     var protoGuid = (PrototypeGuid)protoGuidVal;
                     var protoId = DataDirectory.Instance.GetPrototypeIdByGuid(protoGuid);

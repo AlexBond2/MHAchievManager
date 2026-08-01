@@ -288,14 +288,17 @@ namespace MHAchievManager.Services
             return node;
         }
 
-        public IEnumerable<LocaleListItem> GetLocaleItemsForCurrentLanguage(string filter = "")
+        public List<LocaleListItem> GetLocaleItemsForCurrentLanguage(string filter, int limit, out int totalMatches)
         {
+            filter = filter?.Trim() ?? string.Empty;
+            totalMatches = 0;
+
+            var result = new List<LocaleListItem>();
+
             foreach (var kvp in _stringMap)
             {
                 LocaleStringId key = kvp.Key;
-
-                if (key == LocaleStringId.Invalid)
-                    continue;
+                if (key == LocaleStringId.Invalid) continue;
 
                 var translations = kvp.Value;
                 if (!translations.TryGetValue(CurrentLanguage, out string text))
@@ -306,17 +309,25 @@ namespace MHAchievManager.Services
                 text ??= string.Empty;
                 string idStr = ((ulong)key).ToString();
 
-                if (idStr.Contains(filter) ||
+                if (string.IsNullOrEmpty(filter) ||
+                    idStr.Contains(filter) ||
                     text.Contains(filter, StringComparison.OrdinalIgnoreCase))
                 {
-                    yield return new LocaleListItem
+                    totalMatches++;
+
+                    if (limit <= 0 || result.Count < limit)
                     {
-                        Id = key,
-                        Text = text,
-                        Used = GetLocaleUsageCount(key)
-                    };
+                        result.Add(new LocaleListItem
+                        {
+                            Id = key,
+                            Text = text,
+                            Used = GetLocaleUsageCount(key)
+                        });
+                    }
                 }
             }
+
+            return result;
         }
 
         public Dictionary<string, string> GetTranslationsForId(LocaleStringId id)
