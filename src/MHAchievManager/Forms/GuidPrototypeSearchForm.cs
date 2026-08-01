@@ -25,6 +25,10 @@ namespace MHAchievManager.Forms
         protected override void SetupForm()
         {
             Text = "Select Prototype";
+
+            FormBorderStyle = FormBorderStyle.Sizable;
+            Size = new Size(620, 440);
+
             txtSearch.PlaceholderText = $"Search by GUID or Name (showing top {MaxResults} results)...";
             btnCreateNew.Visible = false;
         }
@@ -48,7 +52,7 @@ namespace MHAchievManager.Forms
                 Name = "colGuid",
                 DataPropertyName = "GuidValue",
                 HeaderText = "Prototype GUID",
-                Width = 160,
+                Width = 140,
                 DefaultCellStyle = new DataGridViewCellStyle { ForeColor = Color.DimGray }
             });
 
@@ -59,16 +63,12 @@ namespace MHAchievManager.Forms
                 DataPropertyName = "Name",
                 AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill
             });
-
-            grid.DefaultCellStyle.SelectionBackColor = Theme.ItemSelectedBg;
-            grid.DefaultCellStyle.SelectionForeColor = Theme.TextSelected;
         }
 
         protected override void RefreshSearchList(string filter)
         {
             filter = filter?.Trim() ?? string.Empty;
             bool isNumber = long.TryParse(filter, out long searchId);
-
 
             var query = DataDirectory.Instance.GetGuidPrototypes();
 

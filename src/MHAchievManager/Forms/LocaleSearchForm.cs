@@ -1,5 +1,4 @@
-﻿using MHAchievManager.Models;
-using MHAchievManager.Services;
+﻿using MHAchievManager.Services;
 using OpenCalligraphy.Core.GameData;
 using System.Drawing;
 using System.Windows.Forms;
@@ -7,19 +6,23 @@ using MHAchievManager.UI;
 
 namespace MHAchievManager.Forms
 {
-    public class LocaleSearchForm : GenericSearchForm
+    public class LocaleListItem
     {
-        private readonly string _achievPath;
-        private readonly LocaleStringId _initialId;
+        public LocaleStringId Id { get; set; }
+        public string DisplayId => ((ulong)Id).ToString();
+        public string Text { get; set; }
+        public int Used { get; set; }
+
+        public override string ToString() => $"[{Id}] {Text}";
+    }
+
+    public class LocaleSearchForm(LocaleStringId selectId, string achievPath) : GenericSearchForm
+    {
+        private readonly string _achievPath = achievPath;
+        private readonly LocaleStringId _initialId = selectId;
 
         // Type-safe wrapper for external access
         public LocaleStringId SelectedLocaleId => SelectedId != null ? (LocaleStringId)SelectedId : _initialId;
-
-        public LocaleSearchForm(LocaleStringId selectId, string achievPath)
-        {
-            _initialId = selectId;
-            _achievPath = achievPath;
-        }
 
         protected override bool CheckDatabaseLoaded()
         {
@@ -69,9 +72,6 @@ namespace MHAchievManager.Forms
                 Width = 40,
                 DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleCenter }
             });
-
-            grid.DefaultCellStyle.SelectionBackColor = Theme.ItemSelectedBg;
-            grid.DefaultCellStyle.SelectionForeColor = Theme.TextSelected;
         }
 
         protected override void RefreshSearchList(string filter)

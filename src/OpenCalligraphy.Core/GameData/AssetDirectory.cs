@@ -32,6 +32,8 @@ namespace OpenCalligraphy.Core.GameData
             return record;
         }
 
+        public IEnumerable<KeyValuePair<AssetId, AssetTypeId>> GetAssetsType() => _assetIdToTypeIdDict;
+
         /// <summary>
         /// Gets the record that contains the <see cref="AssetType"/> with the specified id.
         /// </summary>

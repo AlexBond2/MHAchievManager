@@ -1,4 +1,5 @@
-﻿using MHAchievManager.Locale;
+﻿using MHAchievManager.Forms;
+using MHAchievManager.Locale;
 using MHAchievManager.Models;
 using OpenCalligraphy.Core.GameData;
 using OpenCalligraphy.Core.Helpers;

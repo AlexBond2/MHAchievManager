@@ -9,16 +9,6 @@ using System.Windows.Forms.Design;
 
 namespace MHAchievManager.Models
 {
-    public class LocaleListItem
-    {
-        public LocaleStringId Id { get; set; }
-        public string DisplayId => ((ulong)Id).ToString();
-        public string Text { get; set; }
-        public int Used { get; set; }
-
-        public override string ToString() => $"[{Id}] {Text}";
-    }
-
     public class GuidPrototypeEditor : UITypeEditor
     {
         public override UITypeEditorEditStyle GetEditStyle(ITypeDescriptorContext context)
@@ -39,6 +29,33 @@ namespace MHAchievManager.Models
                     if (editorService.ShowDialog(form) == DialogResult.OK)
                     {
                         return (long)form.SelectedId;
+                    }
+                }
+            }
+            return value;
+        }
+    }
+
+    public class AssetIdEditor : UITypeEditor
+    {
+        public override UITypeEditorEditStyle GetEditStyle(ITypeDescriptorContext context)
+        {
+            return UITypeEditorEditStyle.Modal;
+        }
+
+        public override object EditValue(ITypeDescriptorContext context, IServiceProvider provider, object value)
+        {
+            if (provider != null)
+            {
+                var editorService = (IWindowsFormsEditorService)provider.GetService(typeof(IWindowsFormsEditorService));
+                if (editorService != null)
+                {
+                    AssetId currentId = value is AssetId aid ? aid : default;
+
+                    using var form = new AssetIdSearchForm(currentId);
+                    if (editorService.ShowDialog(form) == DialogResult.OK)
+                    {
+                        return (AssetId)form.SelectedId;
                     }
                 }
             }

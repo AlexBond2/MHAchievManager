@@ -57,6 +57,9 @@ namespace MHAchievManager.UI
                 Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right
             };
 
+            gridResults.DefaultCellStyle.SelectionBackColor = Theme.ItemSelectedBg;
+            gridResults.DefaultCellStyle.SelectionForeColor = Theme.TextSelected;
+
             lblStatus = new Label
             {
                 Text = "",
@@ -77,6 +80,7 @@ namespace MHAchievManager.UI
             gridResults.DataError += (s, e) => { e.ThrowException = false; };
 
             ClientSize = new Size(553, 342);
+            MinimumSize = new Size(553, 342);
             AutoScaleMode = AutoScaleMode.Inherit;
             FormBorderStyle = FormBorderStyle.FixedDialog;
             StartPosition = FormStartPosition.CenterParent;
@@ -85,6 +89,9 @@ namespace MHAchievManager.UI
             ShowInTaskbar = false;
 
             Controls.AddRange([lblSearch, txtSearch, gridResults, lblStatus, btnCreateNew, btnSave, btnCancel]);
+
+            SetupForm();
+            SetupColumns(gridResults);
 
             AcceptButton = btnSave;
             CancelButton = btnCancel;
@@ -124,9 +131,7 @@ namespace MHAchievManager.UI
                 Close();
                 return;
             }
-
-            SetupForm();
-            SetupColumns(gridResults);
+            
             EnableDoubleBuffering(gridResults);
 
             SetInitialSearchText();
@@ -197,13 +202,9 @@ namespace MHAchievManager.UI
         protected void UpdateStatusLabel(int displayedCount, int totalMatches)
         {
             if (totalMatches > MaxResults)
-            {
                 lblStatus.Text = $"Showing top {displayedCount} of {totalMatches:N0} matches";
-            }
             else
-            {
                 lblStatus.Text = $"Found {totalMatches:N0} items";
-            }
         }
     }
 }

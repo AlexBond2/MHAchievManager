@@ -309,6 +309,7 @@ namespace MHAchievManager.Models
         [DisplayName("Icon Asset ID")]
         [Description("Texture asset ID reference used for the main achievement icon.")]
         [TypeConverter(typeof(AssetIdConverter))]
+        [Editor(typeof(AssetIdEditor), typeof(UITypeEditor))]
         public AssetId IconPathAssetId
         {
             get => _info.IconPathAssetId;
@@ -319,6 +320,7 @@ namespace MHAchievManager.Models
         [DisplayName("Hi-Res Icon Asset ID")]
         [Description("High-resolution texture asset ID reference (optional/unused in client).")]
         [TypeConverter(typeof(AssetIdConverter))]
+        [Editor(typeof(AssetIdEditor), typeof(UITypeEditor))]
         public AssetId IconPathHiResAssetId
         {
             get => _info.IconPathHiResAssetId;
@@ -418,6 +420,7 @@ namespace MHAchievManager.Models
         [TypeConverter(typeof(GuidPrototypeConverter))]
         [Editor(typeof(GuidPrototypeEditor), typeof(UITypeEditor))]
         public long RewardPrototype { get; set; }
+
         [Browsable(false)]
         public List<EventData> EventData { get; set; }
         [Browsable(false)]
@@ -437,6 +440,7 @@ namespace MHAchievManager.Models
     public class EventData
     {
         [TypeConverter(typeof(GuidPrototypeConverter))]
+        [Editor(typeof(GuidPrototypeEditor), typeof(UITypeEditor))]
         public long Prototype { get; set; }
         public bool IncludeChildren { get; set; }
 
@@ -447,25 +451,12 @@ namespace MHAchievManager.Models
     public class EventContext
     {
         public EventContextType ContextType { get; set; }
+
         [TypeConverter(typeof(GuidPrototypeConverter))]
+        [Editor(typeof(GuidPrototypeEditor), typeof(UITypeEditor))]
         public long Prototype { get; set; }
         public bool IncludeChildren { get; set; }
 
         public override string ToString() => $"EventContext";
-    }
-
-    public class AchievementStrings
-    {
-        public Dictionary<string, Dictionary<string, string>> Strings { get; set; } = [];
-    }
-
-    public class AchievementTreeNode
-    {
-        public int Id { get; set; }
-        public string DisplayName { get; set; }
-        public string Category { get; set; }
-        public string SubCategory { get; set; }
-        public int ParentId { get; set; }
-        public AchievementInfo Info { get; set; }
     }
 }
