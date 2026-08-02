@@ -140,6 +140,7 @@ namespace MHAchievManager
         private void OnOpenPakFileClicked(object sender, EventArgs e)
         {
             OpenPakFile();
+            _achievementPropertyGrid.Refresh();
         }
 
         private void OnLocaleMenuItemClicked(object sender, EventArgs e)

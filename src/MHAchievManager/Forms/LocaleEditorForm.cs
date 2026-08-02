@@ -110,15 +110,7 @@ namespace MHAchievManager.Forms
             MinimizeBox = false;
             ShowInTaskbar = false;
 
-            Controls.AddRange(
-            [
-                tabLanguages,
-            lblId,
-            txtSelectedId,
-            btnCreateNew,
-            btnSave,
-            btnCancel
-            ]);
+            Controls.AddRange([tabLanguages, lblId, txtSelectedId, btnCreateNew, btnSave, btnCancel]);
 
             AcceptButton = btnSave;
             CancelButton = btnCancel;

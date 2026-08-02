@@ -25,10 +25,6 @@ namespace MHAchievManager.Forms
         protected override void SetupForm()
         {
             Text = "Select Prototype";
-
-            FormBorderStyle = FormBorderStyle.Sizable;
-            Size = new Size(620, 440);
-
             txtSearch.PlaceholderText = $"Search by GUID or Name (showing top {MaxResults} results)...";
             btnCreateNew.Visible = false;
         }

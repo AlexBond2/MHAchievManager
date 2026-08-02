@@ -33,14 +33,14 @@ namespace MHAchievManager.UI
             txtSearch = new TextBox
             {
                 Location = new Point(63, 12),
-                Size = new Size(478, 23),
+                Size = new Size(545, 23),
                 Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right
             };
 
             gridResults = new DataGridView
             {
                 Location = new Point(12, 45),
-                Size = new Size(529, 250),
+                Size = new Size(596, 348),
                 AllowUserToAddRows = false,
                 AllowUserToDeleteRows = false,
                 AllowUserToResizeRows = false,
@@ -63,15 +63,15 @@ namespace MHAchievManager.UI
             lblStatus = new Label
             {
                 Text = "",
-                Location = new Point(12, 309),
-                Size = new Size(260, 17),
+                Location = new Point(12, 407),
+                Size = new Size(320, 17),
                 TextAlign = ContentAlignment.MiddleLeft,
                 Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right
             };
 
-            btnCreateNew = CreateButton("Add New", new Point(289, 305), btnCreateNew_Click);
-            btnSave = CreateButton("Ok", new Point(375, 305), btnSave_Click);
-            btnCancel = CreateButton("Cancel", new Point(461, 305), btnCancel_Click);
+            btnCreateNew = CreateButton("Add New", new Point(356, 403), btnCreateNew_Click);
+            btnSave = CreateButton("Ok", new Point(442, 403), btnSave_Click);
+            btnCancel = CreateButton("Cancel", new Point(528, 403), btnCancel_Click);
 
             txtSearch.TextChanged += txtSearch_TextChanged;
             gridResults.CellClick += gridResults_CellClick;
@@ -79,14 +79,15 @@ namespace MHAchievManager.UI
             // Suppress standard DataError crash
             gridResults.DataError += (s, e) => { e.ThrowException = false; };
 
-            ClientSize = new Size(553, 342);
+            ClientSize = new Size(620, 440);
             MinimumSize = new Size(553, 342);
             AutoScaleMode = AutoScaleMode.Inherit;
-            FormBorderStyle = FormBorderStyle.FixedDialog;
+            FormBorderStyle = FormBorderStyle.Sizable;
             StartPosition = FormStartPosition.CenterParent;
             MaximizeBox = false;
             MinimizeBox = false;
             ShowInTaskbar = false;
+            ShowIcon = false;
 
             Controls.AddRange([lblSearch, txtSearch, gridResults, lblStatus, btnCreateNew, btnSave, btnCancel]);
 

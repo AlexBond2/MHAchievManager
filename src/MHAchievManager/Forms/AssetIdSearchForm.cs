@@ -29,10 +29,6 @@ namespace MHAchievManager.Forms
         protected override void SetupForm()
         {
             Text = "Select Asset";
-
-            FormBorderStyle = FormBorderStyle.Sizable;
-            Size = new Size(620, 440);
-
             txtSearch.PlaceholderText = $"Search Asset by ID or Name (showing top {MaxResults})...";
             btnCreateNew.Visible = false;
         }
