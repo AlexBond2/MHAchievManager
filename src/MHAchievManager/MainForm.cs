@@ -29,7 +29,8 @@ namespace MHAchievManager
         public MainForm()
         {
             AchievementRepository.Initialize();
-            InitializeComponentCustom();
+            InitializeComponent();
+            SetApplicationIcon();
             EnableDoubleBuffering(_categoryTreeView);
             EnableDoubleBuffering(_achievementsTreeView);
         }
@@ -41,7 +42,12 @@ namespace MHAchievManager
                 null, tv, new object[] { true });
         }
 
-        private void InitializeComponentCustom()
+        private void SetApplicationIcon()
+        {
+            Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
+        }
+
+        private void InitializeComponent()
         {
             Text = "MH Achievement Manager";
             Size = new Size(1200, 930);

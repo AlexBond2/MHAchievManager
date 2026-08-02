@@ -7,9 +7,11 @@
     <Nullable>disable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
     <Platforms>AnyCPU;x64</Platforms>
+	<ApplicationIcon>Resources\MHAchiev.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="Resources\MHAchiev.ico" />
     <ProjectReference Include="..\OpenCalligraphy.Core\OpenCalligraphy.Core.csproj" />
   </ItemGroup>
 
