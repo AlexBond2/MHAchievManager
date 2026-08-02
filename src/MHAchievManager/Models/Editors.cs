@@ -92,16 +92,7 @@ namespace MHAchievManager.Models
 
             if (editorService.ShowDialog(dialog) == DialogResult.OK)
             {
-                var newId = dialog.SelectedLocaleId;
-
-                if (newId != currentId)
-                {
-                    context?.PropertyDescriptor?.SetValue(context.Instance, newId);
-                    AchievementRepository.Instance.RebuildIndexes();
-                    AchievementRepository.Instance.IsDirty = true;
-
-                    return newId;
-                }
+                return dialog.SelectedLocaleId;
             }
 
             return value;
@@ -125,40 +116,11 @@ namespace MHAchievManager.Models
                 if (sec > 0) currentDate = DateTimeOffset.FromUnixTimeSeconds(sec).UtcDateTime;
             }
 
-            using var form = new Form
-            {
-                Text = "Select Datetime",
-                Size = new System.Drawing.Size(290, 140),
-                FormBorderStyle = FormBorderStyle.FixedDialog,
-                StartPosition = FormStartPosition.CenterParent,
-                MaximizeBox = false,
-                MinimizeBox = false,
-                ShowIcon = false
-            };
-
-            var picker = new DateTimePicker
-            {
-                Format = DateTimePickerFormat.Custom,
-                CustomFormat = "yyyy-MM-dd HH:mm:ss",
-                Value = currentDate,
-                Location = new System.Drawing.Point(15, 15),
-                Width = 245
-            };
-
-            var btnNow = new Button { Text = "Set to Now", Location = new System.Drawing.Point(15, 55), Width = 100 };
-            btnNow.Click += (s, e) => picker.Value = DateTime.UtcNow;
-
-            var btnOk = new Button { Text = "OK", DialogResult = DialogResult.OK, Location = new System.Drawing.Point(160, 55), Width = 100 };
-
-            form.Controls.Add(picker);
-            form.Controls.Add(btnNow);
-            form.Controls.Add(btnOk);
-            form.AcceptButton = btnOk;
+            using var form = new DateTimeForm(currentDate);
 
             if (editorService.ShowDialog(form) == DialogResult.OK)
             {
-                long unixSeconds = ((DateTimeOffset)picker.Value).ToUnixTimeSeconds();
-                return new TimeSpan(unixSeconds * TimeSpan.TicksPerSecond);
+                return form.GetSelectedTimeSpan();
             }
 
             return value;

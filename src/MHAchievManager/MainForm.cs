@@ -4,6 +4,7 @@ using MHAchievManager.Models;
 using MHAchievManager.Services;
 using MHAchievManager.UI;
 using OpenCalligraphy.Core.GameData;
+using OpenCalligraphy.Core.Locales;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -178,29 +179,44 @@ namespace MHAchievManager
 
         private void ChangeLanguage(GameLocale.LocaleInfo locale)
         {
-            // Remember currently selected subcategory ID and achievement ID
-            LocaleStringId? selectedSubCategoryId = (_categoryTreeView.SelectedNode?.Tag as CategoryNode)?.Id;
-            uint? selectedAchievementId = (_achievementsTreeView.SelectedNode?.Tag as AchievementInfo)?.Id;
-
-            // Update global instance language
             AchievementRepository.Instance.CurrentLanguage = locale.Code;
+            RefreshTreesAndRestoreSelection();
+        }
+
+        private void RefreshTreesAndRestoreSelection()
+        {
+            // Retrieve currently selected achievement and category nodes
+            var selectedAchievement = _achievementsTreeView.SelectedNode?.Tag as AchievementInfo;
+
+            LocaleStringId? targetSubCategoryId = null;
+            uint? selectedAchievementId = selectedAchievement?.Id;
+
+            // Determine target subcategory: prioritize the updated properties of the selected achievement if available
+            if (selectedAchievement != null)
+            {
+                targetSubCategoryId = selectedAchievement.SubCategoryStr;
+            }
+            else if (_categoryTreeView.SelectedNode?.Tag is CategoryNode selectedCategoryNode)
+            {
+                targetSubCategoryId = selectedCategoryNode.Id;
+            }
 
             // Refresh grid or UI bindings
             UpdateCategoryList();
 
-            // Restore selected category node
-            if (selectedSubCategoryId.HasValue)
+            // Restore or navigate to the target subcategory node
+            if (targetSubCategoryId.HasValue)
             {
-                TreeNode targetNode = FindCategoryNodeById(_categoryTreeView.Nodes, selectedSubCategoryId.Value);
-                if (targetNode != null)
+                TreeNode targetCategoryNode = FindCategoryNodeById(_categoryTreeView.Nodes, targetSubCategoryId.Value);
+                if (targetCategoryNode != null)
                 {
-                    _categoryTreeView.SelectedNode = targetNode;
-                    targetNode.EnsureVisible();
+                    _categoryTreeView.SelectedNode = targetCategoryNode;
+                    targetCategoryNode.EnsureVisible();
 
-                    // Load achievements for the restored subcategory
-                    LoadAchievementsForSubCategory(selectedSubCategoryId.Value);
+                    // Populate achievements list for the resolved subcategory
+                    LoadAchievementsForSubCategory(targetSubCategoryId.Value);
 
-                    // Restore selected achievement node
+                    // Restore focus to the specific achievement node
                     if (selectedAchievementId.HasValue)
                     {
                         TreeNode targetAchNode = FindAchievementNodeById(_achievementsTreeView.Nodes, selectedAchievementId.Value);
@@ -380,13 +396,28 @@ namespace MHAchievManager
         /// </summary>
         private void OnAchievementPropertyValueChanged(object s, PropertyValueChangedEventArgs e)
         {
-            if (_achievementsTreeView.SelectedNode != null)
+            if (!Equals(e.OldValue, e.ChangedItem.Value))
             {
-                if (e.ChangedItem.PropertyDescriptor.Name == nameof(AchievementInfo.Name) ||
-                    e.ChangedItem.PropertyDescriptor.Name == nameof(AchievementInfo.InProgressStr))
+                AchievementRepository.Instance.RebuildIndexes();
+                AchievementRepository.Instance.IsInfoDirty = true;
+
+                string propertyName = e.ChangedItem.PropertyDescriptor.Name;
+
+                if (propertyName == nameof(AchievementInfoViewModel.CategoryStr) ||
+                    propertyName == nameof(AchievementInfoViewModel.SubCategoryStr))
+                {
+                    RefreshTreesAndRestoreSelection();
+                    return;
+                }
+
+                if (propertyName == nameof(AchievementInfo.Name) && _achievementsTreeView.SelectedNode != null)
                 {
                     var achInfo = (AchievementInfo)_achievementsTreeView.SelectedNode.Tag;
-                    _achievementsTreeView.SelectedNode.Text = AchievementRepository.Instance.GetLocale(achInfo.Name);
+                    string displayName = AchievementRepository.Instance.GetLocale(achInfo.Name);
+
+                    _achievementsTreeView.SelectedNode.Text = string.IsNullOrEmpty(displayName)
+                        ? $"[{achInfo.Id}]"
+                        : $"{displayName} [{achInfo.Id}]";
                 }
 
                 _achievementsTreeView.Invalidate();

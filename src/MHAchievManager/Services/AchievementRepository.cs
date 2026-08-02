@@ -50,7 +50,8 @@ namespace MHAchievManager.Services
 
         public IReadOnlyCollection<AchievementInfo> AllAchievements => _infoMap.Values;
 
-        public bool IsDirty { get; set; }
+        public bool IsInfoDirty { get; set; }
+        public bool IsStringDirty { get; set; }
 
         public string GetLocale(LocaleStringId key, string defaultText = "")
         {
@@ -137,7 +138,7 @@ namespace MHAchievManager.Services
         public void ReloadLayers(IEnumerable<string> activeInfoFiles, IEnumerable<string> activeStringFiles)
         {
             _infoMap.Clear();
-            IsDirty = false;
+            IsInfoDirty = false;
 
             JsonSerializerOptions options = new();
             options.Converters.Add(new TimeSpanJsonConverter());
@@ -164,6 +165,7 @@ namespace MHAchievManager.Services
             RebuildIndexes();
 
             _stringMap.Clear();
+            IsStringDirty = false;
             _availableLocales.Clear();
 
             foreach (var filePath in activeStringFiles)
@@ -391,7 +393,7 @@ namespace MHAchievManager.Services
 
             if (hasAnyChanges)
             {
-                IsDirty = true;
+                IsStringDirty = true;
             }
         }
     }
