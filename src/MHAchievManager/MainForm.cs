@@ -1,3 +1,4 @@
+using MHAchievManager.Forms;
 using MHAchievManager.Locale;
 using MHAchievManager.Models;
 using MHAchievManager.Services;
@@ -85,8 +86,13 @@ namespace MHAchievManager
                 _localeMenu.DropDownItems.Add(item);
             }
 
+            // --- Help Menu ---
+            var helpMenu = new ToolStripMenuItem("Help");
+            helpMenu.DropDownItems.Add(new ToolStripMenuItem("About...", null, OnAboutClicked));
+
             menuStrip.Items.Add(fileMenu);
             menuStrip.Items.Add(_localeMenu);
+            menuStrip.Items.Add(helpMenu);
 
             Controls.Add(menuStrip);
             MainMenuStrip = menuStrip;
@@ -141,6 +147,12 @@ namespace MHAchievManager
 
             Controls.Add(mainGrid);
             mainGrid.BringToFront();
+        }
+
+        private void OnAboutClicked(object sender, EventArgs e)
+        {
+            using var aboutForm = new AboutForm();
+            aboutForm.ShowDialog(this);
         }
 
         private void OnOpenPakFileClicked(object sender, EventArgs e)
