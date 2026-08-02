@@ -1,6 +1,7 @@
 ﻿using MHAchievManager.Models;
 using MHAchievManager.Services;
 using System;
+using System.ComponentModel;
 using System.Drawing;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
@@ -125,8 +126,15 @@ namespace MHAchievManager.UI
         }
     }
 
+    public class LayerItemCheckEventArgs(LayerItem item, bool newValue) : CancelEventArgs
+    {
+        public LayerItem Item { get; } = item;
+        public bool NewValue { get; } = newValue;
+    }
+
     public class LayerListBox : ListBox
     {
+        public event EventHandler<LayerItemCheckEventArgs> ItemCheckChanging;
         public event EventHandler ItemCheckChanged;
 
         public LayerItem ActiveLayer { get; private set; }
@@ -166,7 +174,20 @@ namespace MHAchievManager.UI
                 {
                     if (item.IsBase) return;
 
-                    item.IsChecked = !item.IsChecked;
+                    bool newCheckState = !item.IsChecked;
+
+                    // Fire the pre-change event to check if the action should be canceled
+                    if (ItemCheckChanging != null)
+                    {
+                        var args = new LayerItemCheckEventArgs(item, newCheckState);
+                        ItemCheckChanging.Invoke(this, args);
+
+                        // If any listener set Cancel = true, stop here!
+                        if (args.Cancel) return;
+                    }
+
+                    // Proceed with toggling state
+                    item.IsChecked = newCheckState;
                     Invalidate();
 
                     ItemCheckChanged?.Invoke(this, EventArgs.Empty);

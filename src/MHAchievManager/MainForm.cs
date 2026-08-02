@@ -314,6 +314,7 @@ namespace MHAchievManager
                 Width = 165,
             };
             _infoLayersBox = new LayerListBox { Dock = DockStyle.Fill };
+            _infoLayersBox.ItemCheckChanging += OnLayersChanging;
             _infoLayersBox.ItemCheckChanged += OnLayerCheckChanged;
             infoGroup.Controls.Add(_infoLayersBox);
 
@@ -325,12 +326,52 @@ namespace MHAchievManager
             };
             _stringLayersBox = new LayerListBox { Dock = DockStyle.Fill };
             _stringLayersBox.ItemCheckChanged += OnLayerCheckChanged;
+            _stringLayersBox.ItemCheckChanging += OnLayersChanging;
             stringGroup.Controls.Add(_stringLayersBox);
 
             layersSidebar.Controls.Add(infoGroup, 0, 0);
             layersSidebar.Controls.Add(stringGroup, 0, 1);
 
             return layersSidebar;
+        }
+
+        private void OnLayersChanging(object sender, LayerItemCheckEventArgs e)
+        {
+            if (!ConfirmDiscardUnsavedChanges())
+            {
+                e.Cancel = true;
+            }
+        }
+
+        private bool ConfirmDiscardUnsavedChanges()
+        {
+            bool isInfoDirty = AchievementRepository.Instance.IsInfoDirty;
+            bool isStringDirty = AchievementRepository.Instance.IsStringDirty;
+
+            // If nothing is modified, allow action immediately
+            if (!isInfoDirty && !isStringDirty)
+                return true;
+
+            // Build clear detailed warning depending on what was edited
+            string details = (isInfoDirty, isStringDirty) switch
+            {
+                (true, true) => "both InfoMap and StringMap",
+                (true, false) => "InfoMap",
+                (false, true) => "StringMap",
+                _ => string.Empty
+            };
+
+            string message = $"You have unsaved changes in {details}!\n\n" +
+                             "Modifying patch layers will reload the entire data state and discard ALL unsaved edits.\n\n" +
+                             "Do you want to proceed and lose your changes?";
+
+            var result = MessageBox.Show(
+                message,
+                "Unsaved Changes Warning",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Warning);
+            
+            return result == DialogResult.Yes;
         }
 
         private void InitializeRightInspectorPanel()
@@ -396,32 +437,32 @@ namespace MHAchievManager
         /// </summary>
         private void OnAchievementPropertyValueChanged(object s, PropertyValueChangedEventArgs e)
         {
+            string propertyName = e.ChangedItem.PropertyDescriptor.Name;
+
+            if (propertyName == nameof(AchievementInfo.Name) && _achievementsTreeView.SelectedNode != null)
+            {
+                var achInfo = (AchievementInfo)_achievementsTreeView.SelectedNode.Tag;
+                string displayName = AchievementRepository.Instance.GetLocale(achInfo.Name);
+
+                _achievementsTreeView.SelectedNode.Text = string.IsNullOrEmpty(displayName)
+                    ? $"[{achInfo.Id}]"
+                    : $"{displayName} [{achInfo.Id}]";
+            }
+
             if (!Equals(e.OldValue, e.ChangedItem.Value))
             {
                 AchievementRepository.Instance.RebuildIndexes();
                 AchievementRepository.Instance.IsInfoDirty = true;
-
-                string propertyName = e.ChangedItem.PropertyDescriptor.Name;
 
                 if (propertyName == nameof(AchievementInfoViewModel.CategoryStr) ||
                     propertyName == nameof(AchievementInfoViewModel.SubCategoryStr))
                 {
                     RefreshTreesAndRestoreSelection();
                     return;
-                }
-
-                if (propertyName == nameof(AchievementInfo.Name) && _achievementsTreeView.SelectedNode != null)
-                {
-                    var achInfo = (AchievementInfo)_achievementsTreeView.SelectedNode.Tag;
-                    string displayName = AchievementRepository.Instance.GetLocale(achInfo.Name);
-
-                    _achievementsTreeView.SelectedNode.Text = string.IsNullOrEmpty(displayName)
-                        ? $"[{achInfo.Id}]"
-                        : $"{displayName} [{achInfo.Id}]";
-                }
-
-                _achievementsTreeView.Invalidate();
+                }                
             }
+
+            _achievementsTreeView.Invalidate();
         }
 
         private void OnCategoryTreeNodeSelected(object sender, TreeViewEventArgs e)
@@ -486,7 +527,7 @@ namespace MHAchievManager
 
             AchievementRepository.Instance.ReloadLayers(activeInfoFiles, activeStringFiles);
             OnLocalesLoaded(AchievementRepository.Instance.AvailableLocales);
-            UpdateCategoryList();
+            RefreshTreesAndRestoreSelection();
         }
 
         private void OnLocalesLoaded(IReadOnlySet<string> availableLocales)
