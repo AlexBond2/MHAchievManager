@@ -109,7 +109,8 @@ namespace MHAchievManager.UI
             btnCancel = CreateButton("Cancel", new Point(528, 403), btnCancel_Click);
 
             txtSearch.TextChanged += txtSearch_TextChanged;
-            gridResults.CellClick += gridResults_CellClick;
+            gridResults.CellClick += gridResults_CellClick; 
+            gridResults.CellDoubleClick += gridResults_CellDoubleClick;
 
             // Suppress standard DataError crash
             gridResults.DataError += (s, e) => { e.ThrowException = false; };
@@ -191,6 +192,12 @@ namespace MHAchievManager.UI
                 txtSearch.SelectionStart = txtSearch.Text.Length;
                 txtSearch.SelectionLength = 0;
             }
+        }
+
+        private void gridResults_CellDoubleClick(object sender, DataGridViewCellEventArgs e)
+        {
+            if (e.RowIndex < 0) return;
+            btnSave_Click(sender, e);
         }
 
         private void btnSave_Click(object sender, EventArgs e)

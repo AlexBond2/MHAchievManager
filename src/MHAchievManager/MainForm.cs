@@ -87,11 +87,20 @@ namespace MHAchievManager
                 _localeMenu.DropDownItems.Add(item);
             }
 
+            // --- Edit Menu ---
+            var editMenu = new ToolStripMenuItem("Edit");
+            var searchMenu = new ToolStripMenuItem("Search...", null, OnSearchAchievementClicked)
+            {
+                ShortcutKeys = Keys.Control | Keys.F
+            };
+            editMenu.DropDownItems.Add(searchMenu);
+
             // --- Help Menu ---
             var helpMenu = new ToolStripMenuItem("Help");
             helpMenu.DropDownItems.Add(new ToolStripMenuItem("About...", null, OnAboutClicked));
 
             menuStrip.Items.Add(fileMenu);
+            menuStrip.Items.Add(editMenu);
             menuStrip.Items.Add(_localeMenu);
             menuStrip.Items.Add(helpMenu);
 
@@ -150,6 +159,16 @@ namespace MHAchievManager
             mainGrid.BringToFront();
         }
 
+        private void OnSearchAchievementClicked(object sender, EventArgs e)
+        {
+            using var searchForm = new AchievementSearchForm(0);
+
+            if (searchForm.ShowDialog(this) == DialogResult.OK && (int)searchForm.SelectedId != 0)
+            {
+                NavigateToAchievement((int)searchForm.SelectedId);
+            }
+        }
+
         private void OnAboutClicked(object sender, EventArgs e)
         {
             using var aboutForm = new AboutForm();
@@ -183,28 +202,45 @@ namespace MHAchievManager
             RefreshTreesAndRestoreSelection();
         }
 
-        private void RefreshTreesAndRestoreSelection()
+        public void NavigateToAchievement(int achievementId)
         {
-            // Retrieve currently selected achievement and category nodes
-            var selectedAchievement = _achievementsTreeView.SelectedNode?.Tag as AchievementInfo;
+            var achievement = AchievementRepository.Instance.GetAchievement(achievementId);
+            if (achievement == null) return;
 
-            LocaleStringId? targetSubCategoryId = null;
-            uint? selectedAchievementId = selectedAchievement?.Id;
-
-            // Determine target subcategory: prioritize the updated properties of the selected achievement if available
-            if (selectedAchievement != null)
-            {
-                targetSubCategoryId = selectedAchievement.SubCategoryStr;
-            }
-            else if (_categoryTreeView.SelectedNode?.Tag is CategoryNode selectedCategoryNode)
-            {
-                targetSubCategoryId = selectedCategoryNode.Id;
-            }
-
-            // Refresh grid or UI bindings
             UpdateCategoryList();
 
-            // Restore or navigate to the target subcategory node
+            var targetSubCategoryId = achievement.SubCategoryStr;
+            TreeNode targetCategoryNode = FindCategoryNodeById(_categoryTreeView.Nodes, targetSubCategoryId);
+
+            if (targetCategoryNode != null)
+            {
+                _categoryTreeView.SelectedNode = targetCategoryNode;
+                targetCategoryNode.EnsureVisible();
+
+                LoadAchievementsForSubCategory(targetSubCategoryId);
+
+                TreeNode targetAchNode = FindAchievementNodeById(_achievementsTreeView.Nodes, achievementId);
+                if (targetAchNode != null)
+                {
+                    _achievementsTreeView.SelectedNode = targetAchNode;
+                    targetAchNode.EnsureVisible();
+                    _achievementsTreeView.Focus();
+                }
+            }
+        }
+
+        private void RefreshTreesAndRestoreSelection()
+        {
+            if (_achievementsTreeView.SelectedNode?.Tag is AchievementInfo selectedAchievement)
+            {
+                NavigateToAchievement((int)selectedAchievement.Id);
+                return;
+            }
+
+            LocaleStringId? targetSubCategoryId = (_categoryTreeView.SelectedNode?.Tag as CategoryNode)?.Id;
+
+            UpdateCategoryList();
+
             if (targetSubCategoryId.HasValue)
             {
                 TreeNode targetCategoryNode = FindCategoryNodeById(_categoryTreeView.Nodes, targetSubCategoryId.Value);
@@ -212,20 +248,7 @@ namespace MHAchievManager
                 {
                     _categoryTreeView.SelectedNode = targetCategoryNode;
                     targetCategoryNode.EnsureVisible();
-
-                    // Populate achievements list for the resolved subcategory
                     LoadAchievementsForSubCategory(targetSubCategoryId.Value);
-
-                    // Restore focus to the specific achievement node
-                    if (selectedAchievementId.HasValue)
-                    {
-                        TreeNode targetAchNode = FindAchievementNodeById(_achievementsTreeView.Nodes, selectedAchievementId.Value);
-                        if (targetAchNode != null)
-                        {
-                            _achievementsTreeView.SelectedNode = targetAchNode;
-                            targetAchNode.EnsureVisible();
-                        }
-                    }
                 }
             }
         }
@@ -249,7 +272,7 @@ namespace MHAchievManager
         /// <summary>
         /// Recursively searches for an achievement node by ID across all tree levels.
         /// </summary>
-        private static TreeNode FindAchievementNodeById(TreeNodeCollection nodes, ulong achievementId)
+        private static TreeNode FindAchievementNodeById(TreeNodeCollection nodes, int achievementId)
         {
             foreach (TreeNode node in nodes)
             {
