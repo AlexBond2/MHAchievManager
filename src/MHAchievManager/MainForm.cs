@@ -422,7 +422,8 @@ namespace MHAchievManager
         {
             if (e.Node?.Tag is AchievementInfo achInfo)
             {
-                _achievementPropertyGrid.SelectedObject = new AchievementInfoViewModel(achInfo);
+                _achievementPropertyGrid.SelectedObject = null;
+                _achievementPropertyGrid.SelectedObject = achInfo;
                 _achievementPropertyGrid.ExpandAllGridItems();
             }
             else
@@ -454,8 +455,8 @@ namespace MHAchievManager
                 AchievementRepository.Instance.RebuildIndexes();
                 AchievementRepository.Instance.IsInfoDirty = true;
 
-                if (propertyName == nameof(AchievementInfoViewModel.CategoryStr) ||
-                    propertyName == nameof(AchievementInfoViewModel.SubCategoryStr))
+                if (propertyName == nameof(AchievementInfo.CategoryStr) ||
+                    propertyName == nameof(AchievementInfo.SubCategoryStr))
                 {
                     RefreshTreesAndRestoreSelection();
                     return;

@@ -82,9 +82,9 @@ namespace MHAchievManager.Models
             if (context != null)
             {
                 string propName = context.PropertyDescriptor.Name;
-                if (context.Instance is AchievementInfoViewModel vm)
+                if (context.Instance is AchievementInfo info)
                 {
-                    defaultPath = $"AchievementStrings.{vm.Id}.{propName}";
+                    defaultPath = $"AchievementStrings.{info.Id}.{propName}";
                 }
             }
 
