@@ -1,9 +1,9 @@
-using MHAchievManager.Services;
 using OpenCalligraphy.Core.GameData;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing.Design;
+using System.Linq;
 using System.Text.Json.Serialization;
 
 namespace MHAchievManager.Models
@@ -296,12 +296,22 @@ namespace MHAchievManager.Models
         public List<EventContext> EventContext { get; set; }
 
         [DisplayName("Event Data")]
-        [TypeConverter(typeof(CleanArrayConverter))]
-        public EventData[] EventDataArray => EventData?.ToArray();
+        [TypeConverter(typeof(EventDataArrayConverter))]
+        [Editor(typeof(EventDataCollectionEditor), typeof(UITypeEditor))]
+        public EventData[] EventDataArray
+        {
+            get => EventData?.ToArray();
+            set => EventData = value != null ? [.. value.Take(3)] : [];
+        }
 
         [DisplayName("Event Context")]
-        [TypeConverter(typeof(CleanArrayConverter))]
-        public EventContext[] EventContextArray => EventContext?.ToArray();
+        [TypeConverter(typeof(EventContextArrayConverter))]
+        [Editor(typeof(EventContextCollectionEditor), typeof(UITypeEditor))]
+        public EventContext[] EventContextArray
+        {
+            get => EventContext?.ToArray();
+            set => EventContext = value != null ? [.. value] : [];
+        }
         public override string ToString() => $"Context";
     }
 

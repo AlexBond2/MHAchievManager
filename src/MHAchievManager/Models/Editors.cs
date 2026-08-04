@@ -1,7 +1,9 @@
 ﻿using MHAchievManager.Forms;
 using OpenCalligraphy.Core.GameData;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
+using System.ComponentModel.Design;
 using System.Drawing.Design;
 using System.Windows.Forms;
 using System.Windows.Forms.Design;
@@ -59,6 +61,34 @@ namespace MHAchievManager.Models
                 }
             }
             return value;
+        }
+    }
+
+    public class EventDataCollectionEditor : CollectionEditor
+    {
+        public EventDataCollectionEditor() : base(typeof(List<EventData>)) { }
+        protected override Type CreateCollectionItemType() => typeof(EventData);
+        protected override object CreateInstance(Type itemType) => new EventData();
+
+        public override object EditValue(ITypeDescriptorContext context, IServiceProvider provider, object value)
+        {
+            var list = value is EventData[] arr ? [.. arr] : new List<EventData>();
+            var resultList = base.EditValue(context, provider, list) as List<EventData>;
+            return resultList?.ToArray() ?? [];
+        }
+    }
+
+    public class EventContextCollectionEditor : CollectionEditor
+    {
+        public EventContextCollectionEditor() : base(typeof(List<EventContext>)) { }
+        protected override Type CreateCollectionItemType() => typeof(EventContext);
+        protected override object CreateInstance(Type itemType) => new EventContext();
+
+        public override object EditValue(ITypeDescriptorContext context, IServiceProvider provider, object value)
+        {
+            var list = value is EventContext[] arr ? [.. arr] : new List<EventContext>();
+            var resultList = base.EditValue(context, provider, list) as List<EventContext>;
+            return resultList?.ToArray() ?? [];
         }
     }
 

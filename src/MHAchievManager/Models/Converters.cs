@@ -138,14 +138,26 @@ namespace MHAchievManager.Models
         }        
     }
 
-    public class CleanArrayConverter : ArrayConverter
+    public class EventDataArrayConverter : ArrayConverter
     {
         public override object ConvertTo(ITypeDescriptorContext context, CultureInfo culture, object value, Type destinationType)
         {
-            if (destinationType == typeof(string) && value is Array array)
+            if (destinationType == typeof(string) && value is EventData[] array)
             {
-                string elemTypeName = array.GetType().GetElementType()?.Name ?? "Item";
-                return $"{elemTypeName}[{array.Length}]";
+                return $"EventData[{array.Length}]";
+            }
+
+            return base.ConvertTo(context, culture, value, destinationType);
+        }
+    }
+
+    public class EventContextArrayConverter : ArrayConverter
+    {
+        public override object ConvertTo(ITypeDescriptorContext context, CultureInfo culture, object value, Type destinationType)
+        {
+            if (destinationType == typeof(string) && value is EventContext[] array)
+            {
+                return $"EventContext[{array.Length}]";
             }
 
             return base.ConvertTo(context, culture, value, destinationType);
