@@ -3,6 +3,7 @@ using OpenCalligraphy.Core.GameData;
 using System;
 using System.ComponentModel;
 using System.Globalization;
+using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -46,6 +47,37 @@ namespace MHAchievManager.Models
                 DateTime dateTime = DateTimeOffset.FromUnixTimeSeconds(totalSeconds).UtcDateTime;
                 return dateTime.ToString("yyyy-MM-dd HH:mm:ss UTC");
             }
+            return base.ConvertTo(context, culture, value, destinationType);
+        }
+    }
+
+    public class AchievementIdConverter : TypeConverter
+    {
+        public override bool CanConvertTo(ITypeDescriptorContext context, Type destinationType)
+        {
+            if (destinationType == typeof(string))
+                return true;
+            return base.CanConvertTo(context, destinationType);
+        }
+
+        public override object ConvertTo(ITypeDescriptorContext context, CultureInfo culture, object value, Type destinationType)
+        {
+            if (destinationType == typeof(string) && value is int id)
+            {
+                if (id == 0)
+                    return "[0] None";
+
+                var ach = AchievementRepository.Instance.GetAchievement(id);
+
+                if (ach != null)
+                {
+                    string name = AchievementRepository.Instance.GetLocale(ach.Name);
+                    return string.IsNullOrEmpty(name) ? $"[ID: {id}]" : $"[{id}] {name}";
+                }
+
+                return $"[{id}] Unknown Achievement";
+            }
+
             return base.ConvertTo(context, culture, value, destinationType);
         }
     }

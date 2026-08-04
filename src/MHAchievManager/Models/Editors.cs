@@ -1,5 +1,4 @@
 ﻿using MHAchievManager.Forms;
-using MHAchievManager.Services;
 using OpenCalligraphy.Core.GameData;
 using System;
 using System.ComponentModel;
@@ -9,6 +8,33 @@ using System.Windows.Forms.Design;
 
 namespace MHAchievManager.Models
 {
+    public class AchievementIdEditor : UITypeEditor
+    {
+        public override UITypeEditorEditStyle GetEditStyle(ITypeDescriptorContext context)
+        {
+            return UITypeEditorEditStyle.Modal;
+        }
+
+        public override object EditValue(ITypeDescriptorContext context, IServiceProvider provider, object value)
+        {
+            if (provider != null)
+            {
+                var editorService = (IWindowsFormsEditorService)provider.GetService(typeof(IWindowsFormsEditorService));
+                if (editorService != null)
+                {
+                    int currentId = value is int i ? i : 0;
+
+                    using var form = new AchievementSearchForm(currentId);
+                    if (editorService.ShowDialog(form) == DialogResult.OK)
+                    {
+                        return Convert.ToInt32(form.SelectedId);
+                    }
+                }
+            }
+            return value;
+        }
+    }
+
     public class GuidPrototypeEditor : UITypeEditor
     {
         public override UITypeEditorEditStyle GetEditStyle(ITypeDescriptorContext context)

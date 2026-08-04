@@ -128,6 +128,8 @@ namespace MHAchievManager.Models
         [Category("1. General")]
         [DisplayName("Parent ID")]
         [Description("ID of the parent achievement component. 0 if this is a root achievement.")]
+        [TypeConverter(typeof(AchievementIdConverter))]
+        [Editor(typeof(AchievementIdEditor), typeof(UITypeEditor))]
         public int ParentId { get; set; }
 
         [Category("1. General")]
@@ -208,6 +210,8 @@ namespace MHAchievManager.Models
         [Category("3. Evaluation && Logic")]
         [DisplayName("Dependent Achievement ID")]
         [Description("ID of an external achievement requirement that must be completed first.")]
+        [TypeConverter(typeof(AchievementIdConverter))]
+        [Editor(typeof(AchievementIdEditor), typeof(UITypeEditor))]
         public int DependentAchievementId { get; set; }
 
         [Category("3. Evaluation && Logic")]

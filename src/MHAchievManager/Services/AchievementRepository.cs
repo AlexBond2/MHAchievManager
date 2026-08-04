@@ -70,6 +70,11 @@ namespace MHAchievManager.Services
             return defaultText.Length > 0 ? defaultText : key.ToString();
         }
 
+        public AchievementInfo GetAchievement(int id)
+        {
+            return _infoMap.TryGetValue((uint)id, out var achievement) ? achievement : null;
+        }
+
         private void IncrementUsage(LocaleStringId id)
         {
             if (id == 0) return;
