@@ -456,7 +456,8 @@ namespace MHAchievManager
                 AchievementRepository.Instance.IsInfoDirty = true;
 
                 if (propertyName == nameof(AchievementInfo.CategoryStr) ||
-                    propertyName == nameof(AchievementInfo.SubCategoryStr))
+                    propertyName == nameof(AchievementInfo.SubCategoryStr) ||
+                    propertyName == nameof(AchievementInfo.ParentId))
                 {
                     RefreshTreesAndRestoreSelection();
                     return;

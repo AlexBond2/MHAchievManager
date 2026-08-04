@@ -12,6 +12,7 @@ namespace MHAchievManager.UI
         // Protected fields so child classes can tweak properties if needed
         protected Label lblSearch;
         protected TextBox txtSearch;
+        private Button btnClearSearch;
         protected DataGridView gridResults;
         protected Label lblStatus;
         protected Button btnCreateNew;
@@ -26,6 +27,38 @@ namespace MHAchievManager.UI
             InitializeComponent();
         }
 
+        private void SetupSearchClearButton()
+        {
+            btnClearSearch = new Button
+            {
+                Text = "✕",
+                Font = new Font("Segoe UI", 8F, FontStyle.Bold),
+                ForeColor = Color.Gray,
+                Width = 23,
+                Height = 23,
+                Location = new Point(txtSearch.ClientSize.Width - txtSearch.Height, -2),
+                Cursor = Cursors.Hand,
+                FlatStyle = FlatStyle.Flat,
+                Visible = false,
+                Anchor = AnchorStyles.Top | AnchorStyles.Right
+            };
+
+            btnClearSearch.FlatAppearance.BorderSize = 0;
+            btnClearSearch.FlatAppearance.MouseDownBackColor = Color.Transparent;
+            btnClearSearch.FlatAppearance.MouseOverBackColor = Theme.ItemSelectedBg;
+
+            btnClearSearch.MouseEnter += (s, e) => btnClearSearch.ForeColor = Theme.TextSelected;
+            btnClearSearch.MouseLeave += (s, e) => btnClearSearch.ForeColor = Color.Gray;
+
+            btnClearSearch.Click += (s, e) =>
+            {
+                txtSearch.Clear();
+                txtSearch.Focus();
+            };
+
+            txtSearch.Controls.Add(btnClearSearch);
+        }
+
         private void InitializeComponent()
         {
             lblSearch = new Label { Text = "Search:", Location = new Point(12, 15), AutoSize = true };
@@ -36,6 +69,8 @@ namespace MHAchievManager.UI
                 Size = new Size(545, 23),
                 Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right
             };
+
+            SetupSearchClearButton();
 
             gridResults = new DataGridView
             {
@@ -139,7 +174,12 @@ namespace MHAchievManager.UI
             RefreshSearchList(txtSearch.Text);
         }
 
-        private void txtSearch_TextChanged(object sender, EventArgs e) => RefreshSearchList(txtSearch.Text);
+        private void txtSearch_TextChanged(object sender, EventArgs e)
+        {
+            btnClearSearch.Visible = !string.IsNullOrEmpty(txtSearch.Text);
+
+            RefreshSearchList(txtSearch.Text);
+        }
 
         private void gridResults_CellClick(object sender, DataGridViewCellEventArgs e)
         {
