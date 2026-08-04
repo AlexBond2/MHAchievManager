@@ -14,6 +14,7 @@ namespace MHAchievManager.UI
         public string FileName { get; set; } = "";
         public bool IsChecked { get; set; } = true;
         public bool IsBase { get; set; } = false;
+        public bool IsNew { get; set; } = false;
 
         public override string ToString() => DisplayName;
     }
@@ -172,7 +173,7 @@ namespace MHAchievManager.UI
 
                 if (checkRect.Contains(e.Location))
                 {
-                    if (item.IsBase) return;
+                    if (item.IsBase || item.IsNew) return;
 
                     bool newCheckState = !item.IsChecked;
 
@@ -201,8 +202,6 @@ namespace MHAchievManager.UI
 
             if (SelectedItem is LayerItem item)
             {
-                if (item.IsBase) return;
-
                 ActiveLayer = item;
                 Invalidate();
             }
@@ -238,7 +237,7 @@ namespace MHAchievManager.UI
             Rectangle checkRect = new(e.Bounds.X + 3, e.Bounds.Y + 3, 14, 14);
             ButtonState checkState = item.IsChecked ? ButtonState.Checked : ButtonState.Normal;
 
-            if (item.IsBase)
+            if (item.IsBase || item.IsNew)
             {
                 checkState |= ButtonState.Inactive;
             }

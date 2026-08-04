@@ -518,11 +518,11 @@ namespace MHAchievManager
         private void OnLayerCheckChanged(object sender, EventArgs e)
         {
             var activeInfoFiles = _infoLayersBox.Items.Cast<LayerItem>()
-                .Where(i => i.IsChecked)
+                .Where(i => i.IsChecked && !i.IsNew)
                 .Select(i => i.FileName);
 
             var activeStringFiles = _stringLayersBox.Items.Cast<LayerItem>()
-                .Where(i => i.IsChecked)
+                .Where(i => i.IsChecked && !i.IsNew)
                 .Select(i => i.FileName);
 
             AchievementRepository.Instance.ReloadLayers(activeInfoFiles, activeStringFiles);
@@ -620,12 +620,6 @@ namespace MHAchievManager
                         };
 
                         _infoLayersBox.Items.Add(item);
-
-                        // The last checked non-Base layer becomes the active one
-                        if (item.IsChecked && !item.IsBase)
-                        {
-                            _infoLayersBox.SetActiveLayer(item);
-                        }
                     }
                     else if (fileName.StartsWith("AchievementStringMap", StringComparison.OrdinalIgnoreCase))
                     {
@@ -639,14 +633,29 @@ namespace MHAchievManager
                         };
 
                         _stringLayersBox.Items.Add(item);
-
-                        if (item.IsChecked && !item.IsBase)
-                        {
-                            _stringLayersBox.SetActiveLayer(item);
-                        }
                     }
                 }
             }
+
+            // Append virtual [New] layer placeholder to InfoLayersBox and make it active by default
+            var newInfoItem = new LayerItem
+            {
+                DisplayName = "[New]",
+                FileName = string.Empty,
+                IsNew = true
+            };
+            _infoLayersBox.Items.Add(newInfoItem);
+            _infoLayersBox.SetActiveLayer(newInfoItem);
+
+            // Append virtual [New] layer placeholder to StringLayersBox and make it active by default
+            var newStringItem = new LayerItem
+            {
+                DisplayName = "[New]",
+                FileName = string.Empty,
+                IsNew = true
+            };
+            _stringLayersBox.Items.Add(newStringItem);
+            _stringLayersBox.SetActiveLayer(newStringItem);
 
             OnLayerCheckChanged(this, EventArgs.Empty);
         }
