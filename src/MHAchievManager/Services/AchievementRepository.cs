@@ -401,6 +401,47 @@ namespace MHAchievManager.Services
                 IsStringDirty = true;
             }
         }
+
+        public int AddNew(AchievementInfo selectedAchievement)
+        {
+            uint newId = 1;
+            while (_infoMap.ContainsKey(newId))
+            {
+                newId++;
+            }
+
+            long unixSeconds = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            var publishedTimeSpan = new TimeSpan(unixSeconds * TimeSpan.TicksPerSecond);
+
+            var newNameId = GenerateNewLocaleId($"AchievementStrings.{newId}.Name");
+            var existingDict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                [GameLocale.DefaultLocale] = "New Achievement"
+            };
+            _stringMap[newNameId] = existingDict;
+            _localeUsageCount[newNameId] = 1;
+            IsStringDirty = true;
+
+            var newAchievement = new AchievementInfo
+            {
+                Id = newId,
+                Enabled = true,
+                Name = newNameId,
+                CategoryStr = selectedAchievement.CategoryStr,
+                SubCategoryStr = selectedAchievement.SubCategoryStr,
+                EventType = ScoringEventType.Invalid,
+                VisibleState = AchievementVisibleState.Visible,
+                PublishedDateUS = publishedTimeSpan,
+                Context = new AchievementContext() { EventData = [], EventContext = [] }
+            };
+
+            _infoMap.Add(newId, newAchievement);
+            IsInfoDirty = true;
+
+            _subCatToRootAchievements[selectedAchievement.SubCategoryStr].Add(newAchievement);
+
+            return (int)newId;
+        }
     }
 
     public class AchievementNode

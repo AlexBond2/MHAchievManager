@@ -89,10 +89,19 @@ namespace MHAchievManager
 
             // --- Edit Menu ---
             var editMenu = new ToolStripMenuItem("Edit");
+
+            var addMenu = new ToolStripMenuItem("Add New", null, OnAddNewAchievementClicked)
+            {
+                ShortcutKeys = Keys.Control | Keys.N
+            };
+
             var searchMenu = new ToolStripMenuItem("Search...", null, OnSearchAchievementClicked)
             {
                 ShortcutKeys = Keys.Control | Keys.F
             };
+
+            editMenu.DropDownItems.Add(addMenu);
+            editMenu.DropDownItems.Add(new ToolStripSeparator());
             editMenu.DropDownItems.Add(searchMenu);
 
             // --- Help Menu ---
@@ -157,6 +166,15 @@ namespace MHAchievManager
 
             Controls.Add(mainGrid);
             mainGrid.BringToFront();
+        }
+
+        private void OnAddNewAchievementClicked(object sender, EventArgs e)
+        {
+            if (_achievementsTreeView.SelectedNode?.Tag is AchievementInfo selectedAchievement)
+            {
+                int newId = AchievementRepository.Instance.AddNew(selectedAchievement);
+                NavigateToAchievement(newId);
+            }
         }
 
         private void OnSearchAchievementClicked(object sender, EventArgs e)
