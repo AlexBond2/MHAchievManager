@@ -580,6 +580,7 @@ namespace MHAchievManager
             AchievementRepository.Instance.ReloadLayers(activeInfoFiles, activeStringFiles);
             OnLocalesLoaded(AchievementRepository.Instance.AvailableLocales);
             RefreshTreesAndRestoreSelection();
+            _saveChanges.Enabled = false;
         }
 
         private void OnSaveClicked(object sender, EventArgs e)

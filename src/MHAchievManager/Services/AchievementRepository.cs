@@ -40,6 +40,10 @@ namespace MHAchievManager.Services
         // Stats for UI
         public int InfoAddedOrModified { get; set; }
         public int StringsAddedOrModified { get; set; }
+        public int InfoAdded { get; set; }
+        public int InfoRemoved { get; set; }
+        public int StringsAdded { get; set; }
+        public int StringsRemoved { get; set; }
 
         // Warnings
         public List<string> InfoWarnings { get; } = [];
@@ -334,6 +338,27 @@ namespace MHAchievManager.Services
                 }
             }
 
+            // --- GitHub Diff ---
+            int itemAdded = 0;
+            int itemRemoved = 0;
+
+            foreach (var (id, newItem) in report.InfoDelta)
+            {
+                if (!targetOriginalInfo.TryGetValue(id, out var oldItem))
+                {
+                    itemAdded++;
+                }
+                else if (JsonSerializer.Serialize(newItem, options) != JsonSerializer.Serialize(oldItem, options))
+                {
+                    itemAdded++;
+                    itemRemoved++;
+                }
+            }
+
+            itemRemoved += targetOriginalInfo.Keys.Count(id => !report.InfoDelta.ContainsKey(id));
+            report.InfoAdded = itemAdded;
+            report.InfoRemoved = itemRemoved;
+
             if (shadowedAchievements.Count > 0)
             {
                 report.InfoWarnings.Add(shadowedAchievements.Count <= 10
@@ -364,6 +389,27 @@ namespace MHAchievManager.Services
                     }
                 }
             }
+
+            // --- GitHub Diff ---
+            itemAdded = 0;
+            itemRemoved = 0;
+
+            foreach (var (id, newItem) in report.StringDelta)
+            {
+                if (!targetOriginalString.TryGetValue(id, out var oldItem))
+                {
+                    itemAdded++;
+                }
+                else if (JsonSerializer.Serialize(newItem) != JsonSerializer.Serialize(oldItem))
+                {
+                    itemAdded++;
+                    itemRemoved++;
+                }
+            }
+
+            itemRemoved += targetOriginalString.Keys.Count(id => !report.StringDelta.ContainsKey(id));
+            report.StringsAdded = itemAdded;
+            report.StringsRemoved = itemRemoved;
 
             if (shadowedStrings.Count > 0)
             {
