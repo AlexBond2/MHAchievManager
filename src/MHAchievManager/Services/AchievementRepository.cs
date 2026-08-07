@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 
 namespace MHAchievManager.Services
@@ -23,6 +24,29 @@ namespace MHAchievManager.Services
         public int VisibleAchievementsCount { get; set; }
         public bool HasVisibleAchievements => VisibleAchievementsCount > 0;
         public override string ToString() => Name;
+    }
+
+    public class SavePatchReport
+    {
+        public string TargetInfoFilePath { get; set; } = string.Empty;
+        public string TargetStringFilePath { get; set; } = string.Empty;
+        public bool IsNewInfoFile { get; set; }
+        public bool IsNewStringFile { get; set; }
+
+        // Delta collections ready for save
+        public Dictionary<uint, AchievementInfo> InfoDelta { get; } = [];
+        public StringMap StringDelta { get; } = [];
+
+        // Stats for UI
+        public int InfoAddedOrModified { get; set; }
+        public int StringsAddedOrModified { get; set; }
+
+        // Warnings
+        public List<string> InfoWarnings { get; } = [];
+        public List<string> StringWarnings { get; } = [];
+
+        public bool HasWarnings => InfoWarnings.Count > 0 || StringWarnings.Count > 0;
+        public bool HasChanges => InfoDelta.Count > 0 || StringDelta.Count > 0;
     }
 
     public class AchievementRepository
@@ -146,7 +170,6 @@ namespace MHAchievManager.Services
             IsInfoDirty = false;
 
             JsonSerializerOptions options = new();
-            options.Converters.Add(new TimeSpanJsonConverter());
 
             foreach (string filePath in activeInfoFiles)
             {
@@ -199,6 +222,315 @@ namespace MHAchievManager.Services
                 }
 
                 Debug.WriteLine($"Loaded {stringMap.Count} achievement strings from {Path.GetFileName(filePath)}");
+            }
+        }
+
+        /// <summary>
+        /// Generates a precise patch report without layer contamination from higher patches.
+        /// </summary>
+        public SavePatchReport GenerateSaveReport(
+            string targetInfoPath,
+            string targetStringPath,
+            IEnumerable<string> activeInfoFiles,
+            IEnumerable<string> activeStringFiles)
+        {
+            var infoList = activeInfoFiles.ToList();
+            var stringList = activeStringFiles.ToList();
+
+            // Partition Info layers
+            int infoTargetIndex = infoList.FindIndex(f => string.Equals(f, targetInfoPath, StringComparison.OrdinalIgnoreCase));
+
+            IEnumerable<string> baseInfoFiles = infoTargetIndex >= 0
+                ? infoList.Take(infoTargetIndex)
+                : infoList;
+
+            IEnumerable<string> upperInfoFiles = infoTargetIndex >= 0
+                ? infoList.Skip(infoTargetIndex + 1)
+                : [];
+
+            // Partition String layers
+            int stringTargetIndex = stringList.FindIndex(f => string.Equals(f, targetStringPath, StringComparison.OrdinalIgnoreCase));
+
+            IEnumerable<string> baseStringFiles = stringTargetIndex >= 0
+                ? stringList.Take(stringTargetIndex)
+                : stringList;
+
+            IEnumerable<string> upperStringFiles = stringTargetIndex >= 0
+                ? stringList.Skip(stringTargetIndex + 1)
+                : [];
+
+            var report = new SavePatchReport
+            {
+                TargetInfoFilePath = targetInfoPath,
+                TargetStringFilePath = targetStringPath,
+                IsNewInfoFile = !File.Exists(targetInfoPath),
+                IsNewStringFile = !File.Exists(targetStringPath)
+            };
+
+            JsonSerializerOptions options = new();
+
+            // 1. Build maps
+            var baseInfoMap = BuildTempInfoMap(baseInfoFiles, options);
+            var baseStringMap = BuildTempStringMap(baseStringFiles);
+
+            var fullOriginalInfoMap = BuildTempInfoMap(infoList, options);
+            var fullOriginalStringMap = BuildTempStringMap(stringList);
+
+            var upperInfoMap = BuildTempInfoMap(upperInfoFiles, options);
+            var upperStringMap = BuildTempStringMap(upperStringFiles);
+
+            // Load original contents of the target files being saved
+            var targetOriginalInfo = File.Exists(targetInfoPath)
+                ? LoadSingleInfoFile(targetInfoPath, options)
+                : [];
+
+            var targetOriginalString = File.Exists(targetStringPath)
+                ? LoadSingleStringFile(targetStringPath)
+                : [];
+
+            // 2. Isolate User Edits (Current UI vs Full Original Merge)
+            var userInfoEdits = new Dictionary<uint, AchievementInfo>();
+            foreach (var (id, current) in _infoMap)
+            {
+                bool exists = fullOriginalInfoMap.TryGetValue(id, out var original);
+                if (!exists || JsonSerializer.Serialize(current, options) != JsonSerializer.Serialize(original, options))
+                {
+                    userInfoEdits[id] = current;
+                }
+            }
+
+            StringMap userStringEdits = [];
+            foreach (var (key, current) in _stringMap)
+            {
+                bool exists = fullOriginalStringMap.TryGetValue(key, out var original);
+                if (!exists || JsonSerializer.Serialize(current) != JsonSerializer.Serialize(original))
+                {
+                    userStringEdits[key] = current;
+                }
+            }
+
+            // 3. Construct Target State for Info (Base + TargetOriginal + UserEdits)
+            var isolatedTargetInfoState = new Dictionary<uint, AchievementInfo>(baseInfoMap);
+            foreach (var (id, item) in targetOriginalInfo) isolatedTargetInfoState[id] = item;
+            foreach (var (id, item) in userInfoEdits) isolatedTargetInfoState[id] = item;
+
+            // 4. Calculate clean Info Delta (TargetState vs BaseMap)
+            var shadowedAchievements = new List<(uint Id, string Name)>();
+            foreach (var (id, targetItem) in isolatedTargetInfoState)
+            {
+                bool existsInBase = baseInfoMap.TryGetValue(id, out var baseItem);
+                bool isChanged = !existsInBase ||
+                                 JsonSerializer.Serialize(targetItem, options) != JsonSerializer.Serialize(baseItem, options);
+
+                if (isChanged)
+                {
+                    report.InfoDelta[id] = targetItem;
+                    report.InfoAddedOrModified++;
+
+                    if (upperInfoMap.ContainsKey(id))
+                    {
+                        shadowedAchievements.Add((id, GetLocale(targetItem.Name)));
+                    }
+                }
+            }
+
+            if (shadowedAchievements.Count > 0)
+            {
+                report.InfoWarnings.Add(shadowedAchievements.Count <= 10
+                    ? $"Shadowed info: {string.Join(", ", shadowedAchievements.Select(x => $"[{x.Id}] '{x.Name}'"))}"
+                    : $"Shadowed info ({shadowedAchievements.Count} items): {string.Join(", ", shadowedAchievements.Take(5).Select(x => x.Id))} and more.");
+            }
+
+            // 5. Construct Target State for Strings & Calculate Delta
+            var isolatedTargetStringState = new Dictionary<LocaleStringId, Dictionary<string, string>>(baseStringMap);
+            foreach (var (key, item) in targetOriginalString) isolatedTargetStringState[key] = item;
+            foreach (var (key, item) in userStringEdits) isolatedTargetStringState[key] = item;
+
+            var shadowedStrings = new List<LocaleStringId>();
+            foreach (var (key, targetDict) in isolatedTargetStringState)
+            {
+                bool existsInBase = baseStringMap.TryGetValue(key, out var baseDict);
+                bool isChanged = !existsInBase ||
+                                 JsonSerializer.Serialize(targetDict) != JsonSerializer.Serialize(baseDict);
+
+                if (isChanged)
+                {
+                    report.StringDelta[key] = targetDict;
+                    report.StringsAddedOrModified++;
+
+                    if (upperStringMap.ContainsKey(key))
+                    {
+                        shadowedStrings.Add(key);
+                    }
+                }
+            }
+
+            if (shadowedStrings.Count > 0)
+            {
+                report.StringWarnings.Add(shadowedStrings.Count <= 10
+                    ? $"Shadowed strings: {string.Join(", ", shadowedStrings)}"
+                    : $"Shadowed strings ({shadowedStrings.Count} items).");
+            }
+
+            return report;
+        }
+
+        // Helpers for reading a single file directly
+        private static Dictionary<uint, AchievementInfo> LoadSingleInfoFile(string file, JsonSerializerOptions options)
+        {
+            var result = new Dictionary<uint, AchievementInfo>();
+            try
+            {
+                using FileStream fs = File.OpenRead(file);
+                var infos = JsonSerializer.Deserialize<AchievementInfo[]>(fs, options);
+                if (infos != null) foreach (var info in infos) result[info.Id] = info;
+            }
+            catch (Exception e) { Debug.WriteLine($"Error reading target info file: {e.Message}"); }
+            return result;
+        }
+
+        private static StringMap LoadSingleStringFile(string file)
+        {
+            StringMap result = [];
+            try
+            {
+                using FileStream fs = File.OpenRead(file);
+                var stringMap = JsonSerializer.Deserialize<StringMap>(fs);
+                if (stringMap != null) foreach (var kvp in stringMap) result[kvp.Key] = kvp.Value;
+            }
+            catch (Exception e) { Debug.WriteLine($"Error reading target string file: {e.Message}"); }
+            return result;
+        }
+
+        // Helper methods to keep the builder clean
+        private static Dictionary<uint, AchievementInfo> BuildTempInfoMap(IEnumerable<string> files, JsonSerializerOptions options)
+        {
+            var tempMap = new Dictionary<uint, AchievementInfo>();
+            foreach (var file in files)
+            {
+                if (!File.Exists(file)) continue;
+                try
+                {
+                    using FileStream fs = File.OpenRead(file);
+                    var infos = JsonSerializer.Deserialize<AchievementInfo[]>(fs, options);
+                    if (infos != null)
+                    {
+                        foreach (var info in infos) tempMap[info.Id] = info;
+                    }
+                }
+                catch (Exception e) { Debug.WriteLine($"Error reading {file}: {e.Message}"); }
+            }
+            return tempMap;
+        }
+
+        private static StringMap BuildTempStringMap(IEnumerable<string> files)
+        {
+            StringMap tempMap = [];
+            foreach (var file in files)
+            {
+                if (!File.Exists(file)) continue;
+                try
+                {
+                    using FileStream fs = File.OpenRead(file);
+                    var stringMap = JsonSerializer.Deserialize<StringMap>(fs);
+                    if (stringMap != null)
+                    {
+                        foreach (var kvp in stringMap) tempMap[kvp.Key] = kvp.Value;
+                    }
+                }
+                catch (Exception e) { Debug.WriteLine($"Error reading {file}: {e.Message}"); }
+            }
+            return tempMap;
+        }
+
+        /// <summary>
+        /// Executes the actual save to disk, merging the delta into existing files if necessary.
+        /// </summary>
+        public void ExecuteSave(SavePatchReport report)
+        {
+            JsonSerializerOptions options = new() 
+            { 
+                WriteIndented = true,
+                Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+            };
+
+            // --- SAVE INFO MAP ---
+            if (report.InfoDelta.Count > 0)
+            {
+                var targetInfoMap = new Dictionary<uint, AchievementInfo>();
+
+                // If file exists, load its original content first
+                if (!report.IsNewInfoFile && File.Exists(report.TargetInfoFilePath))
+                {
+                    try
+                    {
+                        using FileStream fs = File.OpenRead(report.TargetInfoFilePath);
+                        var existingInfos = JsonSerializer.Deserialize<AchievementInfo[]>(fs, options);
+                        if (existingInfos != null)
+                        {
+                            foreach (var info in existingInfos) targetInfoMap[info.Id] = info;
+                        }
+                    }
+                    catch (Exception e) { Debug.WriteLine($"Failed to load existing patch file: {e.Message}"); }
+                }
+
+                // Apply delta (add new, update existing)
+                foreach (var kvp in report.InfoDelta)
+                {
+                    targetInfoMap[kvp.Key] = kvp.Value;
+                }
+
+                // Clean up: Remove entries from the target file that are NO LONGER in the delta
+                // (meaning the user reverted them to match the base layer)
+                var keysToRemove = targetInfoMap.Keys.Where(k => !report.InfoDelta.ContainsKey(k)).ToList();
+                foreach (var key in keysToRemove)
+                {
+                    targetInfoMap.Remove(key);
+                }
+
+                // Save back to disk
+                string infoJson = JsonSerializer.Serialize(targetInfoMap.Values.ToArray(), options);
+                File.WriteAllText(report.TargetInfoFilePath, infoJson);
+                IsInfoDirty = false;
+            }
+
+            // --- SAVE STRING MAP (Same logic) ---
+            if (report.StringDelta.Count > 0)
+            {
+                options = new()
+                {
+                    WriteIndented = true,
+                    Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+                };
+                var targetStringMap = new StringMap();
+
+                if (!report.IsNewStringFile && File.Exists(report.TargetStringFilePath))
+                {
+                    try
+                    {
+                        using FileStream fs = File.OpenRead(report.TargetStringFilePath);
+                        var existingStrings = JsonSerializer.Deserialize<StringMap>(fs, options);
+                        if (existingStrings != null)
+                        {
+                            foreach (var kvp in existingStrings) targetStringMap[kvp.Key] = kvp.Value;
+                        }
+                    }
+                    catch (Exception e) { Debug.WriteLine($"Failed to load existing string file: {e.Message}"); }
+                }
+
+                foreach (var kvp in report.StringDelta)
+                {
+                    targetStringMap[kvp.Key] = kvp.Value;
+                }
+
+                var stringKeysToRemove = targetStringMap.Keys.Where(k => !report.StringDelta.ContainsKey(k)).ToList();
+                foreach (var key in stringKeysToRemove)
+                {
+                    targetStringMap.Remove(key);
+                }
+                string stringJson = JsonSerializer.Serialize(targetStringMap, options);
+                File.WriteAllText(report.TargetStringFilePath, stringJson);
+                IsStringDirty = false;
             }
         }
 

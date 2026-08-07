@@ -109,10 +109,9 @@ namespace MHAchievManager.Models
 
     #endregion
 
+    [JsonConverter(typeof(AchievementInfoJsonConverter))]
     public class AchievementInfo
     {
-        #region 1. General
-
         [Category("1. General")]
         [DisplayName("Achievement ID")]
         [Description("Unique uint identifier of the achievement record.")]
@@ -132,35 +131,12 @@ namespace MHAchievManager.Models
         [Editor(typeof(AchievementIdEditor), typeof(UITypeEditor))]
         public int ParentId { get; set; }
 
-        [Category("1. General")]
-        [DisplayName("Score")]
-        [Description("Achievement points awarded to the player upon completion.")]
-        public int Score { get; set; }
-
-        #endregion
-
-        #region 2. Localization
-
         [Category("2. Localization")]
         [DisplayName("Name")]
         [Description("Translated achievement name.")]
         [TypeConverter(typeof(LocaleStringConverter))]
         [Editor(typeof(LocaleStringEditor), typeof(UITypeEditor))]
         public LocaleStringId Name { get; set; }
-
-        [Category("2. Localization")]
-        [DisplayName("Category")]
-        [Description("Translated category name.")]
-        [TypeConverter(typeof(LocaleStringConverter))]
-        [Editor(typeof(LocaleStringEditor), typeof(UITypeEditor))]
-        public LocaleStringId CategoryStr { get; set; }
-
-        [Category("2. Localization")]
-        [DisplayName("SubCategory")]
-        [Description("Translated subcategory name.")]
-        [TypeConverter(typeof(LocaleStringConverter))]
-        [Editor(typeof(LocaleStringEditor), typeof(UITypeEditor))]
-        public LocaleStringId SubCategoryStr { get; set; }
 
         [Category("2. Localization")]
         [DisplayName("In-Progress Text")]
@@ -183,9 +159,36 @@ namespace MHAchievManager.Models
         [Editor(typeof(LocaleStringEditor), typeof(UITypeEditor))]
         public LocaleStringId RewardStr { get; set; }
 
-        #endregion
+        [Category("4. Visual && UI")]
+        [DisplayName("Icon Asset ID")]
+        [Description("Texture asset ID reference used for the main achievement icon.")]
+        [TypeConverter(typeof(AssetIdConverter))]
+        [Editor(typeof(AssetIdEditor), typeof(UITypeEditor))]
+        public AssetId IconPathAssetId { get; set; }
 
-        #region 3. Evaluation & Logic
+        [Category("1. General")]
+        [DisplayName("Score")]
+        [Description("Achievement points awarded to the player upon completion.")]
+        public int Score { get; set; }
+
+        [Category("2. Localization")]
+        [DisplayName("Category")]
+        [Description("Translated category name.")]
+        [TypeConverter(typeof(LocaleStringConverter))]
+        [Editor(typeof(LocaleStringEditor), typeof(UITypeEditor))]
+        public LocaleStringId CategoryStr { get; set; }
+
+        [Category("2. Localization")]
+        [DisplayName("SubCategory")]
+        [Description("Translated subcategory name.")]
+        [TypeConverter(typeof(LocaleStringConverter))]
+        [Editor(typeof(LocaleStringEditor), typeof(UITypeEditor))]
+        public LocaleStringId SubCategoryStr { get; set; }
+
+        [Category("4. Visual && UI")]
+        [DisplayName("Display Order")]
+        [Description("Defines the sorting order of this component within lists.")]
+        public int DisplayOrder { get; set; }
 
         [Category("3. Evaluation && Logic")]
         [DisplayName("Visible State")]
@@ -214,48 +217,10 @@ namespace MHAchievManager.Models
         [Editor(typeof(AchievementIdEditor), typeof(UITypeEditor))]
         public int DependentAchievementId { get; set; }
 
-        [Category("3. Evaluation && Logic")]
-        [DisplayName("Context")]
-        [Description("Additional context references, triggers, and reward prototypes.")]
-        public AchievementContext Context { get; set; }
-
-        #endregion
-
-        #region 4. Visual & UI
-
-        [Category("4. Visual && UI")]
-        [DisplayName("Display Order")]
-        [Description("Defines the sorting order of this component within lists.")]
-        public int DisplayOrder { get; set; }
-
         [Category("4. Visual && UI")]
         [DisplayName("UI Display Option")]
         [Description("Controls UI component representation (CheckBox, ProgressBar, Counter, Invisible, etc.).")]
         public AchievementUIProgressDisplayOption UIProgressDisplayOption { get; set; }
-
-        [Category("4. Visual && UI")]
-        [DisplayName("Icon Asset ID")]
-        [Description("Texture asset ID reference used for the main achievement icon.")]
-        [TypeConverter(typeof(AssetIdConverter))]
-        [Editor(typeof(AssetIdEditor), typeof(UITypeEditor))]
-        public AssetId IconPathAssetId { get; set; }
-
-        [Category("4. Visual && UI")]
-        [DisplayName("Hi-Res Icon Asset ID")]
-        [Description("High-resolution texture asset ID reference (optional/unused in client).")]
-        [TypeConverter(typeof(AssetIdConverter))]
-        [Editor(typeof(AssetIdEditor), typeof(UITypeEditor))]
-        public AssetId IconPathHiResAssetId { get; set; } = AssetId.Invalid;
-
-        [Category("4. Visual && UI")]
-        [DisplayName("Party Visible")]
-        [Description("Broadcasts progress or completion notification to party members.")]
-        [JsonRequired]
-        public bool PartyVisible { get; set; }
-
-        #endregion
-
-        #region 5. System & Console
 
         [Category("5. System && Console")]
         [DisplayName("Published Date (US)")]
@@ -263,6 +228,13 @@ namespace MHAchievManager.Models
         [TypeConverter(typeof(UnixTimeConverter))]
         [Editor(typeof(UnixTimeEditor), typeof(UITypeEditor))]
         public TimeSpan PublishedDateUS { get; set; }
+
+        [Category("4. Visual && UI")]
+        [DisplayName("Hi-Res Icon Asset ID")]
+        [Description("High-resolution texture asset ID reference (optional/unused in client).")]
+        [TypeConverter(typeof(AssetIdConverter))]
+        [Editor(typeof(AssetIdEditor), typeof(UITypeEditor))]
+        public AssetId IconPathHiResAssetId { get; set; } = AssetId.Invalid;
 
         [Category("5. System && Console")]
         [DisplayName("Orbis Trophy")]
@@ -279,7 +251,16 @@ namespace MHAchievManager.Models
         [Description("Shared status for PlayStation 4 trophy evaluation.")]
         public bool OrbisTrophyShared { get; set; } = false;
 
-        #endregion
+        [Category("4. Visual && UI")]
+        [DisplayName("Party Visible")]
+        [Description("Broadcasts progress or completion notification to party members.")]
+        [JsonRequired]
+        public bool PartyVisible { get; set; }
+
+        [Category("3. Evaluation && Logic")]
+        [DisplayName("Context")]
+        [Description("Additional context references, triggers, and reward prototypes.")]
+        public AchievementContext Context { get; set; }
     }
 
     [TypeConverter(typeof(ExpandableObjectConverter))]
@@ -312,6 +293,12 @@ namespace MHAchievManager.Models
             get => EventContext?.ToArray();
             set => EventContext = value != null ? [.. value] : [];
         }
+
+        [JsonIgnore]
+        [Browsable(false)]
+        public bool IsEmpty => RewardPrototype == 0
+                    && (EventData == null || EventData.Count == 0)
+                    && (EventContext == null || EventContext.Count == 0);
         public override string ToString() => $"Context";
     }
 

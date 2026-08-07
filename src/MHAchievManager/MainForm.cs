@@ -4,7 +4,6 @@ using MHAchievManager.Models;
 using MHAchievManager.Services;
 using MHAchievManager.UI;
 using OpenCalligraphy.Core.GameData;
-using OpenCalligraphy.Core.Locales;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -26,7 +25,9 @@ namespace MHAchievManager
         private PropertyGrid _achievementPropertyGrid;
         private SplitContainer _rightSplitContainer;
         private ToolStripMenuItem _localeMenu;
+        private ToolStripMenuItem _saveChanges;
         private readonly List<(GameLocale.LocaleInfo Info, ToolStripMenuItem MenuItem)> _localeMenuItems = [];
+        private string _folderPath;
 
         public MainForm()
         {
@@ -62,6 +63,12 @@ namespace MHAchievManager
             var fileMenu = new ToolStripMenuItem("File");
             fileMenu.DropDownItems.Add(new ToolStripMenuItem("Open Achievements...", null, OnOpenAchievementsClicked));
             fileMenu.DropDownItems.Add(new ToolStripMenuItem("Open PakFile...", null, OnOpenPakFileClicked));
+            fileMenu.DropDownItems.Add(new ToolStripSeparator());
+            _saveChanges = new ToolStripMenuItem("Save Changes...", null, OnSaveClicked)
+            {
+                Enabled = false
+            };
+            fileMenu.DropDownItems.Add(_saveChanges);
 
             // --- Locale Menu ---
             _localeMenu = new ToolStripMenuItem("Locale");
@@ -493,6 +500,7 @@ namespace MHAchievManager
 
             if (!Equals(e.OldValue, e.ChangedItem.Value))
             {
+                _saveChanges.Enabled = true;
                 AchievementRepository.Instance.RebuildIndexes();
                 AchievementRepository.Instance.IsInfoDirty = true;
 
@@ -505,6 +513,7 @@ namespace MHAchievManager
                 }                
             }
 
+            _saveChanges.Enabled = AchievementRepository.Instance.IsInfoDirty || AchievementRepository.Instance.IsStringDirty;
             _achievementsTreeView.Invalidate();
         }
 
@@ -573,6 +582,42 @@ namespace MHAchievManager
             RefreshTreesAndRestoreSelection();
         }
 
+        private void OnSaveClicked(object sender, EventArgs e)
+        {
+            string targetInfoPath = _infoLayersBox.ActiveLayer.FileName;
+            string targetStringPath = _stringLayersBox.ActiveLayer.FileName;
+
+            var activeInfoFiles = _infoLayersBox.Items.Cast<LayerItem>()
+                .Where(i => i.IsChecked && !i.IsNew)
+                .Select(i => i.FileName);
+
+            var activeStringFiles = _stringLayersBox.Items.Cast<LayerItem>()
+                .Where(i => i.IsChecked && !i.IsNew)
+                .Select(i => i.FileName);
+
+            // 1. Generate the report
+            var report = AchievementRepository.Instance.GenerateSaveReport(
+                targetInfoPath,
+                targetStringPath,
+                activeInfoFiles,
+                activeStringFiles);
+
+            // 2. Open confirmation window
+            using var saveDlg = new SavePatchForm(report);
+            if (saveDlg.ShowDialog(this) == DialogResult.OK)
+            {
+                // Update report paths in case user modified them in the textbox
+                report.TargetInfoFilePath = saveDlg.FinalInfoPath;
+                report.TargetStringFilePath = saveDlg.FinalStringPath;
+
+                // 3. Execute save
+                AchievementRepository.Instance.ExecuteSave(report);
+
+                LoadFilesFromFolder(_folderPath);
+                _saveChanges.Enabled = false;
+            }
+        }
+
         private void OnLocalesLoaded(IReadOnlySet<string> availableLocales)
         {
             foreach (var (info, menuItem) in _localeMenuItems)
@@ -628,6 +673,7 @@ namespace MHAchievManager
 
                 if (!string.IsNullOrEmpty(folderPath))
                 {
+                    _folderPath = folderPath;
                     LoadFilesFromFolder(folderPath);
                 }
             }
@@ -639,6 +685,9 @@ namespace MHAchievManager
             _stringLayersBox.Items.Clear();
 
             var searchPaths = new[] { path, Path.Combine(path, "Off") };
+
+            int numInfo = 0;
+            int numString = 0;
 
             foreach (var currentPath in searchPaths)
             {
@@ -663,6 +712,7 @@ namespace MHAchievManager
                         };
 
                         _infoLayersBox.Items.Add(item);
+                        numInfo++;
                     }
                     else if (fileName.StartsWith("AchievementStringMap", StringComparison.OrdinalIgnoreCase))
                     {
@@ -676,6 +726,7 @@ namespace MHAchievManager
                         };
 
                         _stringLayersBox.Items.Add(item);
+                        numString++;
                     }
                 }
             }
@@ -684,7 +735,7 @@ namespace MHAchievManager
             var newInfoItem = new LayerItem
             {
                 DisplayName = "[New]",
-                FileName = string.Empty,
+                FileName = Path.Combine(_folderPath, $"AchievementInfoMap_{numInfo:D2}_New.json"),
                 IsNew = true
             };
             _infoLayersBox.Items.Add(newInfoItem);
@@ -694,7 +745,7 @@ namespace MHAchievManager
             var newStringItem = new LayerItem
             {
                 DisplayName = "[New]",
-                FileName = string.Empty,
+                FileName = Path.Combine(_folderPath, $"AchievementStringMap_{numString:D2}_New.json"),
                 IsNew = true
             };
             _stringLayersBox.Items.Add(newStringItem);
