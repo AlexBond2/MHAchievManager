@@ -1,7 +1,6 @@
 ﻿using MHAchievManager.Services;
 using MHAchievManager.UI;
 using System;
-using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Windows.Forms;
@@ -16,7 +15,7 @@ namespace MHAchievManager.Forms
         private Label lblInfoRemoved;
         private Label lblStringAdded;
         private Label lblStringRemoved;
-        private TextBox txtWarnings;
+        private RichTextBox rtbWarnings;
         private Button btnSave;
         private Button btnCancel;
 
@@ -93,7 +92,7 @@ namespace MHAchievManager.Forms
                 Text = "+0",
                 AutoSize = true,
                 Font = new Font(Font, FontStyle.Bold),
-                ForeColor = ColorTranslator.FromHtml("#22863A"),
+                ForeColor = Theme.Added,
                 Margin = new Padding(0)
             };
             lblInfoRemoved = new Label
@@ -101,7 +100,7 @@ namespace MHAchievManager.Forms
                 Text = "-0",
                 AutoSize = true,
                 Font = new Font(Font, FontStyle.Bold),
-                ForeColor = ColorTranslator.FromHtml("#CB2431"),
+                ForeColor = Theme.Removed,
                 Margin = new Padding(6, 0, 0, 0)
             };
             flowInfoStats.Controls.Add(lblInfoRemoved);
@@ -122,7 +121,7 @@ namespace MHAchievManager.Forms
                 Text = "+0",
                 AutoSize = true,
                 Font = new Font(Font, FontStyle.Bold),
-                ForeColor = ColorTranslator.FromHtml("#22863A"),
+                ForeColor = Theme.Added,
                 Margin = new Padding(0)
             };
             lblStringRemoved = new Label
@@ -130,7 +129,7 @@ namespace MHAchievManager.Forms
                 Text = "-0",
                 AutoSize = true,
                 Font = new Font(Font, FontStyle.Bold),
-                ForeColor = ColorTranslator.FromHtml("#CB2431"),
+                ForeColor = Theme.Removed,
                 Margin = new Padding(6, 0, 0, 0)
             };
             flowStringStats.Controls.Add(lblStringRemoved);
@@ -151,18 +150,17 @@ namespace MHAchievManager.Forms
                 Size = new Size(560, 95)
             };
 
-            txtWarnings = new TextBox
+            rtbWarnings = new RichTextBox
             {
-                Location = new Point(15, 20),
-                Size = new Size(530, 65),
-                Multiline = true,
+                Location = new Point(10, 20),
+                Size = new Size(540, 64),
                 ReadOnly = true,
-                BorderStyle = BorderStyle.None,
-                BackColor = Color.White, 
+                BackColor = SystemColors.Window,
+                ScrollBars = RichTextBoxScrollBars.Vertical,
                 TabStop = false
             };
 
-            grpDetails.Controls.Add(txtWarnings);
+            grpDetails.Controls.Add(rtbWarnings);
             Controls.Add(grpDetails);
 
             AcceptButton = btnSave;
@@ -201,17 +199,31 @@ namespace MHAchievManager.Forms
             lblStringRemoved.Text = $"-{_report.StringsRemoved}";
 
             // Warnings
-            var allWarnings = new List<string>();
-            foreach (var warn in _report.InfoWarnings) allWarnings.Add($"[Info] {warn}");
-            foreach (var warn in _report.StringWarnings) allWarnings.Add($"[String] {warn}");
+            rtbWarnings.Clear();
 
-            if (allWarnings.Count == 0)
+            bool hasWarnings = _report.InfoWarnings.Count > 0 || _report.StringWarnings.Count > 0;
+
+            if (!hasWarnings)
             {
-                txtWarnings.Text = "No warnings or layer conflicts detected. Safe to save!";
+                rtbWarnings.AppendText("No warnings or layer conflicts detected. Safe to save!");
             }
             else
             {
-                txtWarnings.Text = string.Join(Environment.NewLine, allWarnings);
+                foreach (var warn in _report.InfoWarnings)
+                {
+                    rtbWarnings.SelectionBackColor = Theme.Warning;
+                    rtbWarnings.AppendText("[Info]");
+                    rtbWarnings.SelectionBackColor = SystemColors.Window;
+                    rtbWarnings.AppendText($" {warn}{Environment.NewLine}");
+                }
+
+                foreach (var warn in _report.StringWarnings)
+                {
+                    rtbWarnings.SelectionBackColor = Theme.Warning;
+                    rtbWarnings.AppendText("[String]");
+                    rtbWarnings.SelectionBackColor = SystemColors.Window;
+                    rtbWarnings.AppendText($" {warn}{Environment.NewLine}");
+                }
             }
 
             btnSave.Enabled =_report.InfoDelta.Count > 0 || _report.StringDelta.Count > 0;

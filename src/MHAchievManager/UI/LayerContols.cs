@@ -3,7 +3,6 @@ using MHAchievManager.Services;
 using System;
 using System.ComponentModel;
 using System.Drawing;
-using System.Text.RegularExpressions;
 using System.Windows.Forms;
 
 namespace MHAchievManager.UI
@@ -255,48 +254,5 @@ namespace MHAchievManager.UI
 
             e.Graphics.DrawString(textToDraw, e.Font ?? Theme.MainFont, textBrush, textRect, format);
         }
-    }
-
-    public static class RichTextBoxExtensions
-    {
-        private static readonly Regex TagRegex = new(@"#(\w+)#(.*?)#/\1#", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-
-        public static void HighlightCustomTags(this RichTextBox rtb)
-        {
-            if (string.IsNullOrEmpty(rtb.Text)) return;
-
-            int start = rtb.SelectionStart;
-            int len = rtb.SelectionLength;
-
-            rtb.SuspendLayout();
-
-            try
-            {
-                rtb.SelectAll();
-                rtb.SelectionColor = SystemColors.WindowText;
-                rtb.SelectionFont = new Font(rtb.Font, FontStyle.Regular);
-
-                var matches = TagRegex.Matches(rtb.Text);
-
-                foreach (Match match in matches)
-                {
-                    string tagName = match.Groups[1].Value.ToLower();
-                    var innerGroup = match.Groups[2];
-
-                    if (!Theme.TagColors.TryGetValue(tagName, out Color tagColor))
-                    {
-                        tagColor = Theme.TagColors["purplecard"];
-                    }
-                    rtb.Select(match.Index, match.Length);
-                    rtb.SelectionColor = tagColor;
-                    rtb.SelectionFont = new Font(rtb.Font, FontStyle.Bold);
-                }
-            }
-            finally
-            {
-                rtb.Select(start, len);
-                rtb.ResumeLayout();
-            }
-        }
-    }
+    }    
 }

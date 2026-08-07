@@ -391,7 +391,7 @@ namespace MHAchievManager
             }
         }
 
-        private bool ConfirmDiscardUnsavedChanges()
+        private static bool ConfirmDiscardUnsavedChanges()
         {
             bool isInfoDirty = AchievementRepository.Instance.IsInfoDirty;
             bool isStringDirty = AchievementRepository.Instance.IsStringDirty;
@@ -403,15 +403,14 @@ namespace MHAchievManager
             // Build clear detailed warning depending on what was edited
             string details = (isInfoDirty, isStringDirty) switch
             {
-                (true, true) => "both InfoMap and StringMap",
+                (true, true) => "InfoMap and StringMap",
                 (true, false) => "InfoMap",
                 (false, true) => "StringMap",
                 _ => string.Empty
             };
 
-            string message = $"You have unsaved changes in {details}!\n\n" +
-                             "Modifying patch layers will reload the entire data state and discard ALL unsaved edits.\n\n" +
-                             "Do you want to proceed and lose your changes?";
+            string message = $"Unsaved changes in {details} will be lost.\n\n" +
+                              "Do you want to proceed?";
 
             var result = MessageBox.Show(
                 message,
@@ -755,9 +754,9 @@ namespace MHAchievManager
             OnLayerCheckChanged(this, EventArgs.Empty);
         }
 
-        private string CleanLayerName(string fileName, string prefix)
+        private static string CleanLayerName(string fileName, string prefix)
         {
-            string name = fileName.Substring(prefix.Length).TrimStart('_', ' ');
+            string name = fileName[prefix.Length..].TrimStart('_', ' ');
             return string.IsNullOrWhiteSpace(name) ? "[Base]" : name;
         }
     }
