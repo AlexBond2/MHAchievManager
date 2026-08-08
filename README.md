@@ -1,44 +1,31 @@
 # MH Achievement Manager
 
-A specialized desktop management tool designed for **MHServerEmu** (Marvel Heroes Server Emulator) developers and content creators to inspect, edit, and localize game achievement data.
+A Windows desktop utility for inspecting, editing, and localizing achievement data for the [MHServerEmu](https://github.com/Crypto137/MHServerEmu) project.
 
----
+## Features
 
-## 🚀 Key Features
+* **Achievement Data Management:** Browse, edit, and create achievement definitions, exporting patch files (`AchievementInfoMap*.json`).
+* **Localization Support:** Manage text mappings (`AchievementStringMap*.json`) with support for up to 8 languages (including `ru_ru`, `fr_fr`, `de_de`, etc.).
+* **Client Archive Integration:** Resolve icon assets and inspect prototype definitions directly from game archives.
 
-* **Achievement Management & Editing:** 
-  * Inspect, modify, and create new server achievements from scratch.
-  * Export changes into standard patch files (`AchievementInfoMap*.json`).
+## Setup & Client Assets
 
-* **Localization & Multi-Language Support:**
-  * Full control over localized text strings (`AchievementStringMap*.json`).
-  * Extends support for up to 8 additional languages simultaneously (including `ru_ru`, `fr_fr`, `de_de`, and others).
+To enable icon preview and prototype resolution:
 
-* **Client Data Integration:**
-  * Displays icon asset names and resolves prototype definitions extracted directly from client archives.
+1. Open **MH Achievement Manager**.
+2. Go to **File -> Open PakFile...**
+3. Select `Calligraphy.sip` (located in your game installation under `Marvel Heroes\Data\Game\`).
 
----
+## Requirements
 
-## 📦 Client Assets Setup
+* Windows (x64)
+* .NET 8.0 Runtime
 
-To enable icon name resolution and full prototype inspection, link your local client data archive:
-
-1. Launch **MH Achievement Manager**.
-2. Navigate to `File` -> `Open PakFile...`
-3. Locate and select the **`Calligraphy.sip`** archive file (typically located in `Marvel Heroes\Data\Game\`).
-
----
-
-## 🛠 Tech Stack
-
-* **Framework:** .NET 8.0 (Windows Forms)
-* **Architecture:** Handcrafted C# UI components (Clean, Designer-less code)
-* **Target:** Windows x64
-
----
-
-## 📜 Credits & License
+## Credits & License
 
 * **Author:** AlexBond
-* **Ecosystem:** [MHServerEmu](https://github.com/MHServerEmu)
-* Released under the **MIT License**.
+* **Dependencies & Integrations:** 
+  * Designed for use with [MHServerEmu](https://github.com/Crypto137/MHServerEmu).
+  * Uses **OpenCalligraphy.Core** from [Crypto137/OpenCalligraphy](https://github.com/Crypto137/OpenCalligraphy) for client archive handling.
+
+This project is licensed under the [MIT License](LICENSE).
