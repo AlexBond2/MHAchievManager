@@ -10,6 +10,7 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace MHAchievManager
@@ -26,12 +27,20 @@ namespace MHAchievManager
         private SplitContainer _rightSplitContainer;
         private ToolStripMenuItem _localeMenu;
         private ToolStripMenuItem _saveChanges;
+        private StatusStrip _statusStrip;
+        private ToolStripStatusLabel _lblStatusText;
+        private ToolStripProgressBar _progressBar;
+        private ToolStripStatusLabel _lblDbStatus;
+        private ToolStripStatusLabel _lblAchievementsCount;
+        private ToolStripStatusLabel _lblObjectsCount;
         private readonly List<(GameLocale.LocaleInfo Info, ToolStripMenuItem MenuItem)> _localeMenuItems = [];
         private string _folderPath;
 
         public MainForm()
         {
+            AppConfig.Load();
             AchievementRepository.Initialize();
+            UpkRepository.Initialize();
             InitializeComponent();
             SetApplicationIcon();
             EnableDoubleBuffering(_categoryTreeView);
@@ -62,7 +71,7 @@ namespace MHAchievManager
             // --- File Menu ---
             var fileMenu = new ToolStripMenuItem("File");
             fileMenu.DropDownItems.Add(new ToolStripMenuItem("Open Achievements...", null, OnOpenAchievementsClicked));
-            fileMenu.DropDownItems.Add(new ToolStripMenuItem("Open PakFile...", null, OnOpenPakFileClicked));
+            fileMenu.DropDownItems.Add(new ToolStripMenuItem("Open Game Folder...", null, OnOpenGameFolderClicked));
             fileMenu.DropDownItems.Add(new ToolStripSeparator());
             _saveChanges = new ToolStripMenuItem("Save Changes...", null, OnSaveClicked)
             {
@@ -173,6 +182,95 @@ namespace MHAchievManager
 
             Controls.Add(mainGrid);
             mainGrid.BringToFront();
+
+            InitializeStatusBar();
+        }
+
+        private void InitializeStatusBar()
+        {
+            _statusStrip = new StatusStrip();
+
+            _lblStatusText = new ToolStripStatusLabel("Ready")
+            {
+                Spring = true,
+                TextAlign = ContentAlignment.MiddleLeft
+            };
+
+            _progressBar = new ToolStripProgressBar
+            {
+                Visible = false,
+                Width = 300,
+                Style = ProgressBarStyle.Blocks
+            };
+
+            _lblDbStatus = new ToolStripStatusLabel("Database: Not Loaded")
+            {
+                BorderSides = ToolStripStatusLabelBorderSides.Right,
+                BorderStyle = Border3DStyle.Etched
+            };
+
+            _lblAchievementsCount = new ToolStripStatusLabel("Achievements: 0")
+            {
+                BorderSides = ToolStripStatusLabelBorderSides.Right,
+                BorderStyle = Border3DStyle.Etched
+            };
+
+            _lblObjectsCount = new ToolStripStatusLabel("Loaded Icons: 0")
+            {
+                BorderSides = ToolStripStatusLabelBorderSides.Right,
+                BorderStyle = Border3DStyle.Etched
+            };
+
+            _statusStrip.Items.AddRange(
+            [
+                _lblAchievementsCount,
+                _lblDbStatus,
+                _lblObjectsCount,
+                _progressBar,
+                _lblStatusText
+            ]);
+
+            Controls.Add(_statusStrip);
+        }
+
+        public void UpdateDbStatus(bool isLoaded)
+        {
+            _lblDbStatus.Text = isLoaded ? "Database: Loaded" : "Database: Not Loaded";
+        }
+
+        public void UpdateAchievCounts(int achievementsCount)
+        {
+            _lblAchievementsCount.Text = $"Achievements: {achievementsCount}";
+        }
+
+        public void UpdateObjectsCounts(int objectsCount)
+        {
+            _lblObjectsCount.Text = $"Loaded Icons: {objectsCount}";
+        }
+
+        public void ShowProgress(string statusText, int current = 0, int total = 100)
+        {
+            _lblStatusText.Text = statusText;
+
+            if (total > 0)
+            {
+                _progressBar.Minimum = 0;
+                _progressBar.Maximum = total;
+                _progressBar.Value = Math.Clamp(current, 0, total);
+                _progressBar.Style = ProgressBarStyle.Blocks;
+            }
+            else
+            {
+                _progressBar.Style = ProgressBarStyle.Marquee;
+            }
+
+            _progressBar.Visible = true;
+        }
+
+        public void HideProgress(string readyText = "Ready")
+        {
+            _progressBar.Visible = false;
+            _lblStatusText.Text = readyText;
         }
 
         private void OnAddNewAchievementClicked(object sender, EventArgs e)
@@ -200,10 +298,91 @@ namespace MHAchievManager
             aboutForm.ShowDialog(this);
         }
 
-        private void OnOpenPakFileClicked(object sender, EventArgs e)
+        private async void OnOpenGameFolderClicked(object sender, EventArgs e)
         {
-            OpenPakFile();
-            _achievementPropertyGrid.Refresh();
+            using FolderBrowserDialog dialog = new();
+            dialog.Description = "Select the root game folder (Marvel Heroes)";
+            dialog.UseDescriptionForTitle = true;
+
+            // Use saved path if available
+            if (!string.IsNullOrEmpty(AppConfig.GameFolderPath) && Directory.Exists(AppConfig.GameFolderPath))
+            {
+                dialog.SelectedPath = AppConfig.GameFolderPath;
+            }
+
+            if (dialog.ShowDialog(this) != DialogResult.OK)
+                return;
+
+            string rootPath = dialog.SelectedPath;
+
+            // Save path for future sessions
+            AppConfig.GameFolderPath = dialog.SelectedPath;
+            AppConfig.Save();
+
+            await LoadGameDataAsync(rootPath);
+        }
+
+        private async Task LoadGameDataAsync(string rootPath)
+        {
+            // Build relative paths
+            string sipPath = Path.Combine(rootPath, @"Data\Game\Calligraphy.sip");
+            string upkFolder = Path.Combine(rootPath, @"UnrealEngine3\MarvelGame\CookedPCConsole");
+
+            // Sanity checks
+            if (!File.Exists(sipPath))
+            {
+                MessageBox.Show($"Calligraphy database file not found:\n{sipPath}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            if (!Directory.Exists(upkFolder))
+            {
+                MessageBox.Show($"UPK assets directory not found:\n{upkFolder}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            Cursor.Current = Cursors.WaitCursor;
+            try
+            {
+                // 1. Load primary SIP database
+                ShowProgress("Loading Calligraphy database...", 0, 100);
+                UpdateDbStatus(GameDatabase.Initialize(sipPath));
+
+                // 2. Filter target UPKs to prevent excessive memory usage
+                ShowProgress("Searching UPK packages...", 10, 100);
+                var targetUpks = new[]
+                {
+                    Path.Combine(upkFolder, "ICO__MarvelUIIcons_Achievements_SF.upk"),
+                    Path.Combine(upkFolder, "ICO__MarvelUIIcons_SF.upk")
+                    // Path.Combine(upkFolder, "PowerIconPackage.upk")
+                }.Where(File.Exists).ToArray();
+
+                if (targetUpks.Length == 0)
+                {
+                    MessageBox.Show("No target UPK icon packages found in the specified directory!", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                // 3. Preload UPK headers into memory
+                ShowProgress("Preloading UPK icon packages...", 60, 100);
+                await UpkRepository.Instance.PreloadPackagesAsync(targetUpks);
+
+                // Refresh UI
+                ShowProgress("Refreshing UI...", 90, 100);
+                _achievementPropertyGrid.Refresh();
+
+                int loadedObjects = UpkRepository.Instance.LoadedExportsCount;
+                UpdateObjectsCounts(loadedObjects);
+                HideProgress("Game data loaded successfully.");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"An error occurred while loading game assets:\n{ex.Message}", "Critical Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            finally
+            {
+                Cursor.Current = Cursors.Default;
+            }
         }
 
         private void OnLocaleMenuItemClicked(object sender, EventArgs e)
@@ -318,28 +497,6 @@ namespace MHAchievManager
             }
 
             return null;
-        }
-
-        private void OpenPakFile()
-        {
-            using OpenFileDialog dialog = new();
-            dialog.FileName = "Calligraphy.sip";
-            dialog.Filter = "Pak files (*.sip)|*.sip|All files (*.*)|*.*";
-            dialog.Multiselect = false;
-
-            DialogResult dialogResult = dialog.ShowDialog(this);
-            if (dialogResult != DialogResult.OK)
-                return;
-
-            string filePath = dialog.FileName;
-
-            InitializeGameDatabase(filePath);
-        }
-
-        private void InitializeGameDatabase(string filePath)
-        {
-            if (GameDatabase.Initialize(filePath) == false)
-                return;
         }
 
         private TableLayoutPanel BuildLayersSidebar()
@@ -579,6 +736,11 @@ namespace MHAchievManager
             AchievementRepository.Instance.ReloadLayers(activeInfoFiles, activeStringFiles);
             OnLocalesLoaded(AchievementRepository.Instance.AvailableLocales);
             RefreshTreesAndRestoreSelection();
+
+            int loadedAchievements = AchievementRepository.Instance.AllAchievements.Count;
+            UpdateAchievCounts(loadedAchievements);
+            HideProgress("Achievements loaded successfully.");
+
             _saveChanges.Enabled = false;
         }
 
@@ -666,6 +828,11 @@ namespace MHAchievManager
                 CheckFileExists = true
             };
 
+            if (!string.IsNullOrEmpty(AppConfig.AchievFolderPath) && Directory.Exists(AppConfig.AchievFolderPath))
+            {
+                dialog.FileName = Path.Combine(AppConfig.AchievFolderPath, dialog.FileName);
+            }
+
             if (dialog.ShowDialog() == DialogResult.OK)
             {
                 string filePath = dialog.FileName;
@@ -675,12 +842,16 @@ namespace MHAchievManager
                 {
                     _folderPath = folderPath;
                     LoadFilesFromFolder(folderPath);
+                    AppConfig.AchievFolderPath = folderPath;
+                    AppConfig.Save();
                 }
             }
         }
 
         private void LoadFilesFromFolder(string path)
         {
+            ShowProgress("Loading Achievements...", 0, 100);
+
             _infoLayersBox.Items.Clear();
             _stringLayersBox.Items.Clear();
 
@@ -751,6 +922,7 @@ namespace MHAchievManager
             _stringLayersBox.Items.Add(newStringItem);
             _stringLayersBox.SetActiveLayer(newStringItem);
 
+            ShowProgress("Loading Achievements...", 50);
             OnLayerCheckChanged(this, EventArgs.Empty);
         }
 

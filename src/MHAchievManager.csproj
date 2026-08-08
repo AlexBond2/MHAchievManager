@@ -6,8 +6,9 @@
     <UseWindowsForms>true</UseWindowsForms>
     <Nullable>disable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
-    <Platforms>AnyCPU;x64</Platforms>
+    <Platforms>x64</Platforms>
 	<ApplicationIcon>Resources\MHAchiev.ico</ApplicationIcon>
+	<Configurations>Release</Configurations>
   </PropertyGroup>
 
   <ItemGroup>
@@ -15,5 +16,10 @@
     <ProjectReference Include="..\dep\OpenCalligraphy.Core\OpenCalligraphy.Core.csproj" />
     <ProjectReference Include="..\dep\UpkManager\UpkManager.csproj" />
   </ItemGroup>
+  
+  <Target Name="CopyDlls" AfterTargets="AfterBuild">
+    <Copy SourceFiles="..\dep\UpkManager\Compression\lib64\lzo2_64.dll" DestinationFolder="$(OutDir)" />
+    <Copy SourceFiles="..\dep\UpkManager\Compression\lib64\msvcr100.dll" DestinationFolder="$(OutDir)" />
+  </Target>
 
 </Project>
