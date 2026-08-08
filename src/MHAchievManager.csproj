@@ -12,6 +12,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Resources\Blank.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\Blank.png" />
     <EmbeddedResource Include="Resources\MHAchiev.ico" />
     <ProjectReference Include="..\dep\OpenCalligraphy.Core\OpenCalligraphy.Core.csproj" />
     <ProjectReference Include="..\dep\UpkManager\UpkManager.csproj" />

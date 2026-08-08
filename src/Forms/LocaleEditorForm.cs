@@ -62,7 +62,7 @@ namespace MHAchievManager.Forms
             {
                 Text = "...",
                 Location = new Point(510, 6),
-                Size = new Size(61, 24),
+                Size = new Size(61, 25),
                 Anchor = AnchorStyles.Top | AnchorStyles.Right
             };
 

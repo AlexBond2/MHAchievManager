@@ -23,6 +23,9 @@ namespace MHAchievManager
         private Panel _rightInspectorPanel;
         private TreeView _categoryTreeView;
         private TreeView _achievementsTreeView;
+        private Panel _iconHeaderPanel;
+        private PictureBox _picIconPreview;
+        private Label _achievTitle;
         private PropertyGrid _achievementPropertyGrid;
         private SplitContainer _rightSplitContainer;
         private ToolStripMenuItem _localeMenu;
@@ -353,8 +356,9 @@ namespace MHAchievManager
                 var targetUpks = new[]
                 {
                     Path.Combine(upkFolder, "ICO__MarvelUIIcons_Achievements_SF.upk"),
-                    Path.Combine(upkFolder, "ICO__MarvelUIIcons_SF.upk")
-                    // Path.Combine(upkFolder, "PowerIconPackage.upk")
+                    Path.Combine(upkFolder, "ICO__MarvelUIIcons_SF.upk"),
+                    Path.Combine(upkFolder, "ICO__SilverSurferIcons_SF.upk")
+                    // Item_Tabloid ??
                 }.Where(File.Exists).ToArray();
 
                 if (targetUpks.Length == 0)
@@ -580,6 +584,38 @@ namespace MHAchievManager
 
         private void InitializeRightInspectorPanel()
         {
+            // 1. Icon Preview Header Panel
+            _iconHeaderPanel = new Panel
+            {
+                Dock = DockStyle.Top,
+                Height = 56, // Padding around 40x40 icon
+                BackColor = Theme.ItemSelectedBg,
+                Padding = new Padding(8)
+            };
+
+            _picIconPreview = new PictureBox
+            {
+                Size = new Size(40, 40),
+                Location = new Point(8, 8),
+                SizeMode = PictureBoxSizeMode.Zoom,
+                BackColor = Color.Transparent
+            };
+
+            _achievTitle = new Label
+            {
+                Location = new Point(56, 8),
+                Size = new Size(_iconHeaderPanel.Width - 64, 40),
+                Font = new Font(SystemFonts.DefaultFont.FontFamily, 9.5f, FontStyle.Bold),
+                ForeColor = Color.White,
+                Text = "",
+                TextAlign = ContentAlignment.MiddleLeft,
+                Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right
+            };
+
+            _iconHeaderPanel.Controls.Add(_picIconPreview);
+            _iconHeaderPanel.Controls.Add(_achievTitle);
+
+            // 2. PropertyGrid Setup
             _achievementPropertyGrid = new PropertyGrid
             {
                 Dock = DockStyle.Fill,
@@ -598,6 +634,7 @@ namespace MHAchievManager
 
             _achievementPropertyGrid.PropertyValueChanged += OnAchievementPropertyValueChanged;
 
+            // 3. SplitContainer Setup
             _rightSplitContainer = new SplitContainer
             {
                 Dock = DockStyle.Fill,
@@ -610,7 +647,10 @@ namespace MHAchievManager
 
             _achievementsTreeView.Dock = DockStyle.Fill;
             _rightSplitContainer.Panel1.Controls.Add(_achievementsTreeView);
+
+            // Order matters: Add Fill first, then Top panel to prevent overlap
             _rightSplitContainer.Panel2.Controls.Add(_achievementPropertyGrid);
+            _rightSplitContainer.Panel2.Controls.Add(_iconHeaderPanel);
 
             _rightInspectorPanel.Controls.Add(_rightSplitContainer);
 
@@ -622,13 +662,22 @@ namespace MHAchievManager
         /// <summary>
         /// When an achievement node is selected, passes its object to the PropertyGrid.
         /// </summary>
-        private void OnAchievementsTreeViewSelected(object sender, TreeViewEventArgs e)
+        private async void OnAchievementsTreeViewSelected(object sender, TreeViewEventArgs e)
         {
             if (e.Node?.Tag is AchievementInfo achInfo)
             {
                 _achievementPropertyGrid.SelectedObject = null;
                 _achievementPropertyGrid.SelectedObject = achInfo;
+                _achievTitle.Text = AchievementRepository.Instance.GetLocale(achInfo.Name);
                 _achievementPropertyGrid.ExpandAllGridItems();
+                _picIconPreview.Image = null;
+
+                Image iconImage = await UpkRepository.Instance.GetIconImageAsync(achInfo.IconPathAssetId);
+                
+                if (_achievementsTreeView.SelectedNode?.Tag == achInfo)
+                {
+                    _picIconPreview.Image = iconImage;
+                }
             }
             else
             {
