@@ -12,7 +12,8 @@
 
   <ItemGroup>
     <EmbeddedResource Include="Resources\MHAchiev.ico" />
-    <ProjectReference Include="..\OpenCalligraphy.Core\OpenCalligraphy.Core.csproj" />
+    <ProjectReference Include="..\dep\OpenCalligraphy.Core\OpenCalligraphy.Core.csproj" />
+    <ProjectReference Include="..\dep\UpkManager\UpkManager.csproj" />
   </ItemGroup>
 
 </Project>

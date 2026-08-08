@@ -1,11 +1,15 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.14.36301.6 d17.14
+VisualStudioVersion = 17.14.36301.6
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MHAchievManager", "MHAchievManager\MHAchievManager.csproj", "{E97EFEAD-86D7-5A1A-448F-BE55485415AE}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MHAchievManager", "src\MHAchievManager.csproj", "{E97EFEAD-86D7-5A1A-448F-BE55485415AE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenCalligraphy.Core", "OpenCalligraphy.Core\OpenCalligraphy.Core.csproj", "{4820177D-B138-4113-FC47-D2E860A45867}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenCalligraphy.Core", "dep\OpenCalligraphy.Core\OpenCalligraphy.Core.csproj", "{4820177D-B138-4113-FC47-D2E860A45867}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UpkManager", "dep\UpkManager\UpkManager.csproj", "{3C572C46-44A4-4F59-ED15-5044E17AD340}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DDSLib", "dep\DDSLib\DDSLib.csproj", "{02C9ADAB-4D0B-D9B8-2D44-4142A6366313}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -31,6 +35,22 @@ Global
 		{4820177D-B138-4113-FC47-D2E860A45867}.Release|Any CPU.Build.0 = Release|Any CPU
 		{4820177D-B138-4113-FC47-D2E860A45867}.Release|x64.ActiveCfg = Release|x64
 		{4820177D-B138-4113-FC47-D2E860A45867}.Release|x64.Build.0 = Release|x64
+		{3C572C46-44A4-4F59-ED15-5044E17AD340}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{3C572C46-44A4-4F59-ED15-5044E17AD340}.Debug|Any CPU.Build.0 = Debug|x64
+		{3C572C46-44A4-4F59-ED15-5044E17AD340}.Debug|x64.ActiveCfg = Debug|x64
+		{3C572C46-44A4-4F59-ED15-5044E17AD340}.Debug|x64.Build.0 = Debug|x64
+		{3C572C46-44A4-4F59-ED15-5044E17AD340}.Release|Any CPU.ActiveCfg = Release|x64
+		{3C572C46-44A4-4F59-ED15-5044E17AD340}.Release|Any CPU.Build.0 = Release|x64
+		{3C572C46-44A4-4F59-ED15-5044E17AD340}.Release|x64.ActiveCfg = Release|x64
+		{3C572C46-44A4-4F59-ED15-5044E17AD340}.Release|x64.Build.0 = Release|x64
+		{02C9ADAB-4D0B-D9B8-2D44-4142A6366313}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{02C9ADAB-4D0B-D9B8-2D44-4142A6366313}.Debug|Any CPU.Build.0 = Debug|x64
+		{02C9ADAB-4D0B-D9B8-2D44-4142A6366313}.Debug|x64.ActiveCfg = Debug|x64
+		{02C9ADAB-4D0B-D9B8-2D44-4142A6366313}.Debug|x64.Build.0 = Debug|x64
+		{02C9ADAB-4D0B-D9B8-2D44-4142A6366313}.Release|Any CPU.ActiveCfg = Release|x64
+		{02C9ADAB-4D0B-D9B8-2D44-4142A6366313}.Release|Any CPU.Build.0 = Release|x64
+		{02C9ADAB-4D0B-D9B8-2D44-4142A6366313}.Release|x64.ActiveCfg = Release|x64
+		{02C9ADAB-4D0B-D9B8-2D44-4142A6366313}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
