@@ -26,8 +26,7 @@ namespace MHAchievManager.Services
         private readonly ConcurrentDictionary<string, UnrealExportTableEntry> _exportIndexMap = new(StringComparer.OrdinalIgnoreCase);
         private readonly DdsFile ddsFile = new();
         public static UpkRepository Instance { get; private set; }
-        public UnrealUpkFile UpkFile { get; private set; }
-        public int LoadedExportsCount => _exportIndexMap.Count;
+        public int LoadedExportsCount => _exportIndexMap.Values.Distinct().Count();
 
         private UpkRepository() { }
 
@@ -59,11 +58,16 @@ namespace MHAchievManager.Services
                     if (!string.Equals(export.ClassReferenceNameIndex.Name, "texture2d", StringComparison.OrdinalIgnoreCase))
                         continue;
 
-                    string objectName = export.GetPathName();
-                    if (string.IsNullOrEmpty(objectName))
-                        continue;
-
-                    _exportIndexMap[objectName] = export;
+                    string pathName = export.GetPathName();
+                    if (!string.IsNullOrEmpty(pathName))
+                    {
+                        _exportIndexMap[pathName] = export;
+                    }
+                    string shortName = export.ObjectNameIndex.Name;
+                    if (!string.IsNullOrEmpty(shortName))
+                    {
+                        _exportIndexMap.TryAdd(shortName, export);
+                    }
                 }
             }
 

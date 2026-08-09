@@ -358,7 +358,6 @@ namespace MHAchievManager
                     Path.Combine(upkFolder, "ICO__MarvelUIIcons_Achievements_SF.upk"),
                     Path.Combine(upkFolder, "ICO__MarvelUIIcons_SF.upk"),
                     Path.Combine(upkFolder, "ICO__SilverSurferIcons_SF.upk")
-                    // Item_Tabloid ??
                 }.Where(File.Exists).ToArray();
 
                 if (targetUpks.Length == 0)
@@ -368,11 +367,11 @@ namespace MHAchievManager
                 }
 
                 // 3. Preload UPK headers into memory
-                ShowProgress("Preloading UPK icon packages...", 60, 100);
+                ShowProgress("Preloading UPK icon packages...", 95, 100);
                 await UpkRepository.Instance.PreloadPackagesAsync(targetUpks);
 
                 // Refresh UI
-                ShowProgress("Refreshing UI...", 90, 100);
+                ShowProgress("Refreshing UI...", 99, 100);
                 _achievementPropertyGrid.Refresh();
 
                 int loadedObjects = UpkRepository.Instance.LoadedExportsCount;
