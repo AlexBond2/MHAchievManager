@@ -276,6 +276,7 @@ namespace MHAchievManager.Models
         [Browsable(false)]
         public List<EventContext> EventContext { get; set; }
 
+        [JsonIgnore]
         [DisplayName("Event Data")]
         [TypeConverter(typeof(EventDataArrayConverter))]
         [Editor(typeof(EventDataCollectionEditor), typeof(UITypeEditor))]
@@ -285,6 +286,7 @@ namespace MHAchievManager.Models
             set => EventData = value != null ? [.. value.Take(3)] : [];
         }
 
+        [JsonIgnore]
         [DisplayName("Event Context")]
         [TypeConverter(typeof(EventContextArrayConverter))]
         [Editor(typeof(EventContextCollectionEditor), typeof(UITypeEditor))]

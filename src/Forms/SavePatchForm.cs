@@ -202,10 +202,21 @@ namespace MHAchievManager.Forms
             rtbWarnings.Clear();
 
             bool hasWarnings = _report.InfoWarnings.Count > 0 || _report.StringWarnings.Count > 0;
+            bool hasInfoChanges = _report.InfoAdded > 0 || _report.InfoRemoved > 0;
+            bool hasStringChanges = _report.StringsAdded > 0 || _report.StringsRemoved > 0;
+
+            btnSave.Enabled = hasInfoChanges || hasStringChanges;
 
             if (!hasWarnings)
             {
-                rtbWarnings.AppendText("No warnings or layer conflicts detected. Safe to save!");
+                if (hasInfoChanges || hasStringChanges)
+                {
+                    rtbWarnings.AppendText("No layer conflicts detected. Safe to save!");
+                }
+                else
+                {
+                    rtbWarnings.AppendText("No changes detected in layer merge. Nothing to save.");
+                }
             }
             else
             {
@@ -225,8 +236,6 @@ namespace MHAchievManager.Forms
                     rtbWarnings.AppendText($" {warn}{Environment.NewLine}");
                 }
             }
-
-            btnSave.Enabled =_report.InfoDelta.Count > 0 || _report.StringDelta.Count > 0;
         }
 
         private void BtnSave_Click(object sender, EventArgs e)

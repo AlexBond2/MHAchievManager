@@ -919,6 +919,18 @@ namespace MHAchievManager
         {
             ShowProgress("Loading Achievements...", 0, 100);
 
+            var infoState = _infoLayersBox.Items.Cast<LayerItem>()
+                .ToDictionary(
+                    x => x.FileName,
+                    x => (x.IsChecked, IsActive: _infoLayersBox.ActiveLayer == x),
+                    StringComparer.OrdinalIgnoreCase);
+
+            var stringState = _stringLayersBox.Items.Cast<LayerItem>()
+                .ToDictionary(
+                    x => x.FileName,
+                    x => (x.IsChecked, IsActive: _stringLayersBox.ActiveLayer == x),
+                    StringComparer.OrdinalIgnoreCase);      
+
             _infoLayersBox.Items.Clear();
             _stringLayersBox.Items.Clear();
 
@@ -941,29 +953,45 @@ namespace MHAchievManager
                     if (fileName.StartsWith("AchievementInfoMap", StringComparison.OrdinalIgnoreCase))
                     {
                         string cleanName = CleanLayerName(fileName, "AchievementInfoMap");
+
+                        bool hasState = infoState.TryGetValue(filePath, out var state);
+                        bool isChecked = hasState ? state.IsChecked : !isOffFolder;
+
                         var item = new LayerItem
                         {
                             DisplayName = isOffFolder ? $"[Off] {cleanName}" : cleanName,
                             FileName = filePath,
-                            IsChecked = !isOffFolder,
+                            IsChecked = isChecked,
                             IsBase = cleanName == "[Base]"
                         };
 
                         _infoLayersBox.Items.Add(item);
+
+                        if (hasState && state.IsActive)
+                            _infoLayersBox.SetActiveLayer(item);
+
                         numInfo++;
                     }
                     else if (fileName.StartsWith("AchievementStringMap", StringComparison.OrdinalIgnoreCase))
                     {
                         string cleanName = CleanLayerName(fileName, "AchievementStringMap");
+
+                        bool hasState = stringState.TryGetValue(filePath, out var state);
+                        bool isChecked = hasState ? state.IsChecked : !isOffFolder;
+
                         var item = new LayerItem
                         {
                             DisplayName = isOffFolder ? $"[Off] {cleanName}" : cleanName,
                             FileName = filePath,
-                            IsChecked = !isOffFolder,
+                            IsChecked = isChecked,
                             IsBase = cleanName == "[Base]"
                         };
 
                         _stringLayersBox.Items.Add(item);
+
+                        if (hasState && state.IsActive)
+                            _stringLayersBox.SetActiveLayer(item);
+
                         numString++;
                     }
                 }
@@ -977,7 +1005,9 @@ namespace MHAchievManager
                 IsNew = true
             };
             _infoLayersBox.Items.Add(newInfoItem);
-            _infoLayersBox.SetActiveLayer(newInfoItem);
+
+            if (_infoLayersBox.ActiveLayer == null)
+                _infoLayersBox.SetActiveLayer(newInfoItem);
 
             // Append virtual [New] layer placeholder to StringLayersBox and make it active by default
             var newStringItem = new LayerItem
@@ -987,7 +1017,9 @@ namespace MHAchievManager
                 IsNew = true
             };
             _stringLayersBox.Items.Add(newStringItem);
-            _stringLayersBox.SetActiveLayer(newStringItem);
+
+            if (_stringLayersBox.ActiveLayer == null)
+                _stringLayersBox.SetActiveLayer(newStringItem);
 
             ShowProgress("Loading Achievements...", 50);
             OnLayerCheckChanged(this, EventArgs.Empty);
