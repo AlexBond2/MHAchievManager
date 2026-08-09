@@ -1,20 +1,20 @@
 # MH Achievement Manager
 
-A Windows desktop utility for inspecting, editing, and localizing achievement data for the [MHServerEmu](https://github.com/Crypto137/MHServerEmu) project.
+A Windows desktop utility for inspecting, editing, and localizing achievement data for the [MHServerEmu](https://github.com/Crypto137/MHServerEmu) project — a server emulator for **Marvel Heroes**.
 
 ## Features
 
 * **Achievement Data Management:** Browse, edit, and create achievement definitions, exporting patch files (`AchievementInfoMap*.json`).
 * **Localization Support:** Manage text mappings (`AchievementStringMap*.json`) with support for up to 8 languages (including `ru_ru`, `fr_fr`, `de_de`, etc.).
-* **Client Archive Integration:** Resolve icon assets and inspect prototype definitions directly from game archives.
+* **Asset & Live Icon Rendering:** Dynamically unpack and render icon previews directly from UPK archives and inspect prototype definitions straight from game assets.
 
 ## Setup & Client Assets
 
 To enable icon preview and prototype resolution:
 
 1. Open **MH Achievement Manager**.
-2. Go to **File -> Open PakFile...**
-3. Select `Calligraphy.sip` (located in your game installation under `Marvel Heroes\Data\Game\`).
+2. Go to **File -> Open Game Folder...**
+3. Select your main `Marvel Heroes` installation folder.
 
 ## Requirements
 
