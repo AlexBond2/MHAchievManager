@@ -60,6 +60,7 @@ namespace MHAchievManager
         private void SetApplicationIcon()
         {
             Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
+            _picIconPreview.Image = UpkRepository.Instance.GetBlankIcon();
         }
 
         private void InitializeComponent()
@@ -606,7 +607,7 @@ namespace MHAchievManager
                 Size = new Size(_iconHeaderPanel.Width - 64, 40),
                 Font = new Font(SystemFonts.DefaultFont.FontFamily, 9.5f, FontStyle.Bold),
                 ForeColor = Color.White,
-                Text = "",
+                Text = "Title",
                 TextAlign = ContentAlignment.MiddleLeft,
                 Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right
             };
@@ -658,6 +659,21 @@ namespace MHAchievManager
             _achievementsTreeView.AfterSelect += OnAchievementsTreeViewSelected;
         }
 
+        private async Task UpdateIconPreviewAsync(AchievementInfo achInfo)
+        {
+            _picIconPreview.Image = UpkRepository.Instance.GetBlankIcon();
+
+            if (achInfo == null || string.IsNullOrEmpty(achInfo.IconPathAssetId.GetName()))
+                return;
+
+            Image iconImage = await UpkRepository.Instance.GetIconImageAsync(achInfo.IconPathAssetId);
+
+            if (_achievementsTreeView.SelectedNode?.Tag == achInfo)
+            {
+                _picIconPreview.Image = iconImage;
+            }
+        }
+
         /// <summary>
         /// When an achievement node is selected, passes its object to the PropertyGrid.
         /// </summary>
@@ -669,18 +685,13 @@ namespace MHAchievManager
                 _achievementPropertyGrid.SelectedObject = achInfo;
                 _achievTitle.Text = AchievementRepository.Instance.GetLocale(achInfo.Name);
                 _achievementPropertyGrid.ExpandAllGridItems();
-                _picIconPreview.Image = null;
 
-                Image iconImage = await UpkRepository.Instance.GetIconImageAsync(achInfo.IconPathAssetId);
-                
-                if (_achievementsTreeView.SelectedNode?.Tag == achInfo)
-                {
-                    _picIconPreview.Image = iconImage;
-                }
+                await UpdateIconPreviewAsync(achInfo);
             }
             else
             {
                 _achievementPropertyGrid.SelectedObject = null;
+                _picIconPreview.Image = UpkRepository.Instance.GetBlankIcon();
             }
         }
 
@@ -688,15 +699,19 @@ namespace MHAchievManager
         /// Triggered when a property value is changed in the PropertyGrid.
         /// Updates the corresponding tree node to reflect the change.
         /// </summary>
-        private void OnAchievementPropertyValueChanged(object s, PropertyValueChangedEventArgs e)
+        private async void OnAchievementPropertyValueChanged(object s, PropertyValueChangedEventArgs e)
         {
+            var achInfo = _achievementsTreeView.SelectedNode?.Tag as AchievementInfo;
             string propertyName = e.ChangedItem.PropertyDescriptor.Name;
 
-            if (propertyName == nameof(AchievementInfo.Name) && _achievementsTreeView.SelectedNode != null)
-            {
-                var achInfo = (AchievementInfo)_achievementsTreeView.SelectedNode.Tag;
-                string displayName = AchievementRepository.Instance.GetLocale(achInfo.Name);
+            bool isCategoryProperty = propertyName == nameof(AchievementInfo.CategoryStr) ||
+                                      propertyName == nameof(AchievementInfo.SubCategoryStr);
 
+            bool requiresTreeRefresh = isCategoryProperty;
+
+            if (achInfo != null && propertyName == nameof(AchievementInfo.Name))
+            {
+                string displayName = AchievementRepository.Instance.GetLocale(achInfo.Name);
                 _achievementsTreeView.SelectedNode.Text = string.IsNullOrEmpty(displayName)
                     ? $"[{achInfo.Id}]"
                     : $"{displayName} [{achInfo.Id}]";
@@ -708,14 +723,18 @@ namespace MHAchievManager
                 AchievementRepository.Instance.RebuildIndexes();
                 AchievementRepository.Instance.IsInfoDirty = true;
 
-                if (propertyName == nameof(AchievementInfo.CategoryStr) ||
-                    propertyName == nameof(AchievementInfo.SubCategoryStr) ||
-                    propertyName == nameof(AchievementInfo.ParentId))
+                if (achInfo != null && propertyName == nameof(AchievementInfo.IconPathAssetId))
                 {
-                    RefreshTreesAndRestoreSelection();
-                    return;
-                }                
+                    await UpdateIconPreviewAsync(achInfo);
+                }
+
+                if (isCategoryProperty || propertyName == nameof(AchievementInfo.ParentId))
+                {
+                    requiresTreeRefresh = true;
+                }
             }
+
+            if (requiresTreeRefresh) RefreshTreesAndRestoreSelection();
 
             _saveChanges.Enabled = AchievementRepository.Instance.IsInfoDirty || AchievementRepository.Instance.IsStringDirty;
             _achievementsTreeView.Invalidate();

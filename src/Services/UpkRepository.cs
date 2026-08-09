@@ -74,7 +74,7 @@ namespace MHAchievManager.Services
             return header;
         }
 
-        private Image GetBlankIcon()
+        public Image GetBlankIcon()
         {
             if (_blankImage == null)
             {

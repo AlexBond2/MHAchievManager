@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Drawing;
 using System.Reflection;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace MHAchievManager.UI
@@ -8,8 +9,8 @@ namespace MHAchievManager.UI
     public abstract class GenericSearchForm : Form
     {
         protected virtual int MaxResults => 150;
+        private bool _isProgrammaticChange = false;
 
-        // Protected fields so child classes can tweak properties if needed
         protected Label lblSearch;
         protected TextBox txtSearch;
         private Button btnClearSearch;
@@ -109,7 +110,8 @@ namespace MHAchievManager.UI
             btnCancel = CreateButton("Cancel", new Point(528, 403), btnCancel_Click);
 
             txtSearch.TextChanged += txtSearch_TextChanged;
-            gridResults.CellClick += gridResults_CellClick; 
+            gridResults.CellClick += gridResults_CellClick;
+            gridResults.SelectionChanged += gridResults_SelectionChanged;
             gridResults.CellDoubleClick += gridResults_CellDoubleClick;
 
             // Suppress standard DataError crash
@@ -162,7 +164,7 @@ namespace MHAchievManager.UI
             // Check if database is loaded before proceeding
             if (!CheckDatabaseLoaded())
             {
-                MessageBox.Show("Database is not loaded! Please open PakFile before searching.",
+                MessageBox.Show("Database is not loaded! Please open Game Folder before searching.",
                                 "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 DialogResult = DialogResult.Abort;
                 Close();
@@ -173,24 +175,49 @@ namespace MHAchievManager.UI
 
             SetInitialSearchText();
             RefreshSearchList(txtSearch.Text);
+
+            UpdateSearchFromSelection();
         }
 
         private void txtSearch_TextChanged(object sender, EventArgs e)
         {
             btnClearSearch.Visible = !string.IsNullOrEmpty(txtSearch.Text);
-
+            if (_isProgrammaticChange) return;
             RefreshSearchList(txtSearch.Text);
+        }
+
+        private void gridResults_SelectionChanged(object sender, EventArgs e)
+        {
+            if (gridResults.ContainsFocus)
+            {
+                UpdateSearchFromSelection();
+            }
         }
 
         private void gridResults_CellClick(object sender, DataGridViewCellEventArgs e)
         {
-            if (e.RowIndex < 0) return;
-            var item = gridResults.Rows[e.RowIndex].DataBoundItem;
-            if (item != null)
+            if (e.RowIndex >= 0)
             {
+                UpdateSearchFromSelection();
+            }
+        }
+
+        private async void UpdateSearchFromSelection()
+        {
+            var item = gridResults.CurrentRow?.DataBoundItem;
+            if (item == null) return;
+
+            _isProgrammaticChange = true;
+            try
+            {
+                await OnSelectedItemChangedAsync(item);
                 txtSearch.Text = GetTextFromItem(item);
                 txtSearch.SelectionStart = txtSearch.Text.Length;
                 txtSearch.SelectionLength = 0;
+            }
+            finally
+            {
+                _isProgrammaticChange = false;
             }
         }
 
@@ -237,6 +264,11 @@ namespace MHAchievManager.UI
 
         // Filter and update data source
         protected abstract void RefreshSearchList(string filter);
+
+        protected virtual Task OnSelectedItemChangedAsync(object item)
+        {
+            return Task.CompletedTask;
+        }
 
         // Extract string representation for the search box when row is clicked
         protected abstract string GetTextFromItem(object item);

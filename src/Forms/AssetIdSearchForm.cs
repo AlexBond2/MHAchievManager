@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace MHAchievManager.Forms
@@ -21,6 +22,8 @@ namespace MHAchievManager.Forms
     {
         private readonly AssetId _initialId = initialId;
 
+        private PictureBox picPreview;
+
         protected override bool CheckDatabaseLoaded()
         {
             return DataDirectory.Instance != null && DataDirectory.Instance.DataChecksum != 0;
@@ -31,6 +34,23 @@ namespace MHAchievManager.Forms
             Text = "Select Asset";
             txtSearch.PlaceholderText = $"Search Asset by ID or Name (showing top {MaxResults})...";
             btnCreateNew.Visible = false;
+
+            picPreview = new PictureBox
+            {
+                Location = new Point(12, 10),
+                Size = new Size(40, 40),
+                SizeMode = PictureBoxSizeMode.Zoom,
+                BorderStyle = BorderStyle.FixedSingle,
+                BackColor = Theme.ItemSelectedBg
+            };
+
+            Controls.Add(picPreview);
+
+            lblSearch.Location = new Point(60, 21);
+            txtSearch.Location = new Point(115, 18);
+            txtSearch.Size = new Size(493, 23);
+            gridResults.Location = new Point(12, 58);
+            gridResults.Size = new Size(596, 335);
         }
 
         protected override void SetInitialSearchText()
@@ -127,10 +147,31 @@ namespace MHAchievManager.Forms
             UpdateStatusLabel(results.Count, totalMatches);
         }
 
-        protected override string GetTextFromItem(object item)
+        private async Task UpdateIconPreviewAsync(AssetId icon)
+        {
+            picPreview.Image = UpkRepository.Instance.GetBlankIcon();
+
+            if (icon == AssetId.Invalid)
+                return;
+
+            Image iconImage = await UpkRepository.Instance.GetIconImageAsync(icon);
+            picPreview.Image = iconImage;
+        }
+
+        protected override async Task OnSelectedItemChangedAsync(object item)
         {
             if (item is AssetListItem selected)
+            {
+                await UpdateIconPreviewAsync(selected.Id);
+            }
+        }
+
+        protected override string GetTextFromItem(object item)
+        {
+            if (item is AssetListItem selected) 
+            {
                 return selected.NumericId.ToString();
+            }
             return string.Empty;
         }
 

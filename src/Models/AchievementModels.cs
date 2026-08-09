@@ -331,8 +331,8 @@ namespace MHAchievManager.Models
         [Editor(typeof(GuidPrototypeEditor), typeof(UITypeEditor))]
         public long Prototype { get; set; }
 
-        [DisplayName("Region Include Children")]
-        [Description("If enabled, extends evaluation to all sub-regions of the targeted Region prototype.")]
+        [DisplayName("Child Regions")]
+        [Description("Evaluates true if the target region matches or inherits from the Target Region prototype.")]
         public bool IncludeChildren { get; set; }
 
         public override string ToString() => $"EventContext";
