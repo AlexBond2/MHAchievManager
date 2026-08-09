@@ -121,6 +121,8 @@ namespace MHAchievManager.Forms
                 if (!ValidIconTypeIds.Contains(typeId)) continue;
 
                 string name = assetId.GetName();
+                if (!UpkRepository.Instance.HasAsset(name)) continue;
+
                 string typeName = Path.GetFileNameWithoutExtension(typeId.GetName());
                 string idStr = ((ulong)assetId).ToString();
 

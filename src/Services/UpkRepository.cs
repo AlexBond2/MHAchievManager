@@ -9,7 +9,6 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using System.Windows.Media.Imaging;
-using UpkManager.Models;
 using UpkManager.Models.UpkFile;
 using UpkManager.Models.UpkFile.Engine.Texture;
 using UpkManager.Models.UpkFile.Objects;
@@ -58,6 +57,27 @@ namespace MHAchievManager.Services
                     if (!string.Equals(export.ClassReferenceNameIndex.Name, "texture2d", StringComparison.OrdinalIgnoreCase))
                         continue;
 
+                    if (export.SerialDataSize < 1100 || export.SerialDataSize > 2100)
+                        continue;
+
+                    /*
+                    // Preload and filter icons
+                    if (export.UnrealObject == null)
+                        await export.ParseUnrealObject(false, false);
+
+                    if (!IsValidIconTexture(export.UnrealObject as IUnrealObject)) 
+                        continue;
+
+                    // Save Min/Max
+                    long currentSize = export.SerialDataSize;
+
+                    lock (_sizeLock)
+                    {
+                        if (currentSize < _minIconDataSize) _minIconDataSize = currentSize;
+                        if (currentSize > _maxIconDataSize) _maxIconDataSize = currentSize;
+                    }
+                    */
+
                     string pathName = export.GetPathName();
                     if (!string.IsNullOrEmpty(pathName))
                     {
@@ -72,6 +92,14 @@ namespace MHAchievManager.Services
             }
 
             return header;
+        }
+
+        public static bool IsValidIconTexture(IUnrealObject unrealObject)
+        {
+            return unrealObject.UObject is UTexture2D textureObject
+                && textureObject.Mips.Count > 0
+                && textureObject.Mips[0].SizeX == 40
+                && textureObject.Mips[0].SizeY == 40;
         }
 
         public Image GetBlankIcon()
@@ -127,5 +155,7 @@ namespace MHAchievManager.Services
             using var tempBitmap = new Bitmap(outStream);
             return new Bitmap(tempBitmap);
         }
+
+        public bool HasAsset(string name) => _exportIndexMap.ContainsKey(name);
     }
 }
