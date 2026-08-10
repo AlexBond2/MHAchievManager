@@ -153,8 +153,6 @@ namespace MHAchievManager.UI
 
         public void SetActiveLayer(LayerItem item)
         {
-            if (item != null && item.IsBase) return;
-
             ActiveLayer = item;
             Invalidate();
         }

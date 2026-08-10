@@ -177,6 +177,8 @@ namespace MHAchievManager.Services
 
             foreach (string filePath in activeInfoFiles)
             {
+                if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath))
+                    continue;
                 try
                 {
                     using FileStream fs = File.OpenRead(filePath);
@@ -202,30 +204,40 @@ namespace MHAchievManager.Services
 
             foreach (var filePath in activeStringFiles)
             {
-                using FileStream fs = File.OpenRead(filePath);
-                StringMap stringMap = JsonSerializer.Deserialize<StringMap>(fs);
-
-                if (stringMap is null)
-                {
-                    Debug.WriteLine("ReloadLayers(): stringMap == null");
+                if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath))
                     continue;
-                }
 
-                foreach (var (stringId, localeDict) in stringMap)
+                try
                 {
-                    if (localeDict is null) continue;
+                    using FileStream fs = File.OpenRead(filePath);
+                    StringMap stringMap = JsonSerializer.Deserialize<StringMap>(fs);
 
-                    // Restore actual data assignment
-                    _stringMap[stringId] = localeDict;
-
-                    // Collect unique locale keys
-                    foreach (var localeCode in localeDict.Keys)
+                    if (stringMap is null)
                     {
-                        _availableLocales.Add(localeCode);
+                        Debug.WriteLine("ReloadLayers(): stringMap == null");
+                        continue;
                     }
-                }
 
-                Debug.WriteLine($"Loaded {stringMap.Count} achievement strings from {Path.GetFileName(filePath)}");
+                    foreach (var (stringId, localeDict) in stringMap)
+                    {
+                        if (localeDict is null) continue;
+
+                        // Restore actual data assignment
+                        _stringMap[stringId] = localeDict;
+
+                        // Collect unique locale keys
+                        foreach (var localeCode in localeDict.Keys)
+                        {
+                            _availableLocales.Add(localeCode);
+                        }
+                    }
+
+                    Debug.WriteLine($"Loaded {stringMap.Count} achievement strings from {Path.GetFileName(filePath)}");
+                }
+                catch (Exception e)
+                {
+                    Debug.WriteLine($"ReloadLayers(): String map deserialization failed ({Path.GetFileName(filePath)}) - {e.Message}");
+                }
             }
         }
 
