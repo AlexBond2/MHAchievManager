@@ -1,6 +1,8 @@
 # MH Achievement Manager
 
-A Windows desktop utility for inspecting, editing, and localizing achievement data for the [MHServerEmu](https://github.com/Crypto137/MHServerEmu) project, a server emulator for Marvel Heroes.
+A dedicated GUI tool for layer patch management, inspection, and localization of achievement data for the [MHServerEmu](https://github.com/Crypto137/MHServerEmu) project, a server emulator for Marvel Heroes.
+
+<img width="1186" height="923" alt="image" src="https://github.com/user-attachments/assets/94d30945-1a97-45b7-b689-58849b4af5b0" />
 
 ## Features
 
