@@ -38,6 +38,8 @@ namespace MHAchievManager.Forms
 
             SetupDynamicLanguageTabs();
             LoadLocaleData();
+
+            AutoScaleMode = AutoScaleMode.Dpi;
         }
 
         private void InitializeComponent()
@@ -54,23 +56,21 @@ namespace MHAchievManager.Forms
                 Location = new Point(104, 7),
                 Size = new Size(400, 23),
                 ReadOnly = true,
-                TextAlign = HorizontalAlignment.Center,
-                Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right
+                TextAlign = HorizontalAlignment.Center
             };
 
             btnCreateNew = new Button
             {
                 Text = "...",
-                Location = new Point(510, 6),
-                Size = new Size(61, 25),
-                Anchor = AnchorStyles.Top | AnchorStyles.Right
+                Location = new Point(510, 6)
             };
+
+            AlignButtonToTextBox();
 
             tabLanguages = new TabControl
             {
                 Location = new Point(13, 36),
-                Size = new Size(558, 110),
-                Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right
+                Size = new Size(558, 110)
             };
 
             tabPage1 = new TabPage(GameLocale.DefaultLocale)
@@ -83,16 +83,14 @@ namespace MHAchievManager.Forms
             {
                 Text = "Ok",
                 Location = new Point(404, 155),
-                Size = new Size(80, 25),
-                Anchor = AnchorStyles.Bottom | AnchorStyles.Right
+                Size = new Size(80, 25)
             };
 
             btnCancel = new Button
             {
                 Text = "Cancel",
                 Location = new Point(490, 155),
-                Size = new Size(80, 25),
-                Anchor = AnchorStyles.Bottom | AnchorStyles.Right
+                Size = new Size(80, 25)
             };
 
             btnSave.Click += btnSave_Click;
@@ -114,6 +112,18 @@ namespace MHAchievManager.Forms
 
             AcceptButton = btnSave;
             CancelButton = btnCancel;
+        }
+
+        private void AlignButtonToTextBox()
+        {
+            btnCreateNew.Height = txtSelectedId.Height + 2;
+            btnCreateNew.Width = LogicalToDeviceUnits(61);
+        }
+
+        protected override void OnDpiChanged(DpiChangedEventArgs e)
+        {
+            base.OnDpiChanged(e);
+            BeginInvoke(AlignButtonToTextBox);
         }
 
         private void LoadLocaleData()
@@ -155,7 +165,7 @@ namespace MHAchievManager.Forms
 
             Rectangle textRect = e.Bounds;
 
-            textRect.Y += isSelected ? -1 : 2;
+            textRect.Y += isSelected ? -LogicalToDeviceUnits(1) : LogicalToDeviceUnits(2);
 
             TextFormatFlags flags = TextFormatFlags.HorizontalCenter |
                                     TextFormatFlags.VerticalCenter |
@@ -178,6 +188,15 @@ namespace MHAchievManager.Forms
                 txt.HighlightCustomTags();
                 tabLanguages.Invalidate();
             };
+
+            txt.DpiChangedAfterParent += (s, e) =>
+            {
+                BeginInvoke(() =>
+                {
+                    txt.HighlightCustomTags();
+                });
+            };
+
             _langInputs[langCode] = txt;
             tabPage.Controls.Add(txt);
 

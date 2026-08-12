@@ -7,10 +7,7 @@ namespace MHAchievManager.Forms
 {
     public class AboutForm : Form
     {
-        private Panel aboutPanel;
-        private TableLayoutPanel aboutTableLayoutPanel;
         private PictureBox iconPictureBox;
-        private TableLayoutPanel infoTableLayoutPanel;
         private Label titleLabel;
         private Label versionLabel;
         private Label copyrightLabel;
@@ -21,6 +18,7 @@ namespace MHAchievManager.Forms
         {
             InitializeComponent();
             SetupAboutIcon();
+            AutoScaleMode = AutoScaleMode.Dpi;
         }
 
         private void SetupAboutIcon()
@@ -36,92 +34,65 @@ namespace MHAchievManager.Forms
 
         private void InitializeComponent()
         {
-            titleLabel = new Label
-            {
-                Text = "MH Achievement Manager",
-                Font = new Font("Segoe UI", 9F, FontStyle.Bold),
-                AutoSize = true,
-                Anchor = AnchorStyles.Left
-            };
-
-            versionLabel = new Label
-            {
-                Text = "Version 1.0.0",
-                AutoSize = true,
-                Anchor = AnchorStyles.Left
-            };
-
-            copyrightLabel = new Label
-            {
-                Text = "Copyright © 2026 AlexBond",
-                AutoSize = true,
-                Anchor = AnchorStyles.Left
-            };
-
-            licenseLabel = new Label
-            {
-                Text = "Created for the MHServerEmu community.\r\nCustom tool for managing server achievement data.",
-                AutoSize = true,
-                Anchor = AnchorStyles.Left
-            };
-
-            websiteLinkLabel = new LinkLabel
-            {
-                Text = "https://github.com/AlexBond2/MHAchievManager",
-                AutoSize = true,
-                Anchor = AnchorStyles.Left,
-                TabStop = true
-            };
-            websiteLinkLabel.LinkClicked += WebsiteLinkLabel_LinkClicked;
+            Size = new Size(464, 141);
+            Font = new Font("Segoe UI", 9F, FontStyle.Regular);
 
             iconPictureBox = new PictureBox
             {
+                Location = new (11, 11),
                 Size = new Size(128, 119),
                 SizeMode = PictureBoxSizeMode.Zoom,
                 TabStop = false
             };
 
-            infoTableLayoutPanel = new TableLayoutPanel
+            titleLabel = new Label
             {
-                Dock = DockStyle.Fill,
-                ColumnCount = 1,
-                RowCount = 5
+                Location = new (148, 13),
+                Text = "MH Achievement Manager",
+                Font = new Font(Font, FontStyle.Bold),
+                AutoSize = true
             };
-            infoTableLayoutPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-            infoTableLayoutPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 20F));
-            infoTableLayoutPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 20F));
-            infoTableLayoutPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 20F));
-            infoTableLayoutPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-            infoTableLayoutPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 20F));
 
-            infoTableLayoutPanel.Controls.Add(titleLabel, 0, 0);
-            infoTableLayoutPanel.Controls.Add(versionLabel, 0, 1);
-            infoTableLayoutPanel.Controls.Add(copyrightLabel, 0, 2);
-            infoTableLayoutPanel.Controls.Add(licenseLabel, 0, 3);
-            infoTableLayoutPanel.Controls.Add(websiteLinkLabel, 0, 4);
-
-            aboutTableLayoutPanel = new TableLayoutPanel
+            versionLabel = new Label
             {
-                Dock = DockStyle.Fill,
-                ColumnCount = 2,
-                RowCount = 1
+                Location = new(148, 33),
+                Text = "Version 1.0.1",
+                AutoSize = true
             };
-            aboutTableLayoutPanel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
-            aboutTableLayoutPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-            aboutTableLayoutPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
 
-            aboutTableLayoutPanel.Controls.Add(iconPictureBox, 0, 0);
-            aboutTableLayoutPanel.Controls.Add(infoTableLayoutPanel, 1, 0);
-
-            aboutPanel = new Panel
+            copyrightLabel = new Label
             {
-                Dock = DockStyle.Fill,
-                Padding = new Padding(8)
+                Location = new(148, 53),
+                Text = "Copyright © 2026 AlexBond",
+                AutoSize = true
             };
-            aboutPanel.Controls.Add(aboutTableLayoutPanel);
+
+            licenseLabel = new Label
+            {
+                Location = new(148, 75),
+                Text = "Created for the MHServerEmu community.\r\nCustom tool for managing server achievement data.",
+                AutoSize = true
+            };
+
+            websiteLinkLabel = new LinkLabel
+            {
+                Location = new(148, 112),
+                Text = "https://github.com/AlexBond2/MHAchievManager",
+                AutoSize = true,
+                TabStop = true
+            };
+            websiteLinkLabel.LinkClicked += WebsiteLinkLabel_LinkClicked;
 
             ClientSize = new Size(464, 141);
-            Controls.Add(aboutPanel);
+
+            Controls.Add(iconPictureBox);
+
+            Controls.Add(titleLabel);
+            Controls.Add(versionLabel);
+            Controls.Add(copyrightLabel);
+            Controls.Add(licenseLabel);
+            Controls.Add(websiteLinkLabel);
+
             Text = "About MH Achievement Manager";
             FormBorderStyle = FormBorderStyle.FixedDialog;
             StartPosition = FormStartPosition.CenterParent;

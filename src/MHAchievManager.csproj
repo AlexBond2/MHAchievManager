@@ -9,6 +9,11 @@
     <Platforms>x64</Platforms>
 	<ApplicationIcon>Resources\MHAchiev.ico</ApplicationIcon>
 	<Configurations>Release</Configurations>
+	<Version>1.0.1</Version>
+    <AssemblyVersion>1.0.1.0</AssemblyVersion>
+    <FileVersion>1.0.1.0</FileVersion>
+	<Authors>AlexBond</Authors>
+	<Copyright>Copyright © 2026 AlexBond</Copyright>
   </PropertyGroup>
 
   <ItemGroup>

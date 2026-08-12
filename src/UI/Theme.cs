@@ -43,9 +43,12 @@ namespace MHAchievManager.UI
 
             try
             {
+                using var normalFont = new Font(rtb.Font.FontFamily, 9f, FontStyle.Regular);
+                using var boldFont = new Font(rtb.Font.FontFamily, 9f, FontStyle.Bold);
+
                 rtb.SelectAll();
                 rtb.SelectionColor = SystemColors.WindowText;
-                rtb.SelectionFont = new Font(rtb.Font, FontStyle.Regular);
+                rtb.SelectionFont = normalFont;
 
                 var matches = TagRegex.Matches(rtb.Text);
 
@@ -60,7 +63,7 @@ namespace MHAchievManager.UI
                     }
                     rtb.Select(match.Index, match.Length);
                     rtb.SelectionColor = tagColor;
-                    rtb.SelectionFont = new Font(rtb.Font, FontStyle.Bold);
+                    rtb.SelectionFont = boldFont;
                 }
             }
             finally

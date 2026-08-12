@@ -48,7 +48,7 @@ namespace MHAchievManager.Forms
                 Name = "colGuid",
                 DataPropertyName = "GuidValue",
                 HeaderText = "Prototype GUID",
-                Width = 140,
+                Tag = 140,
                 DefaultCellStyle = new DataGridViewCellStyle { ForeColor = Color.DimGray }
             });
 

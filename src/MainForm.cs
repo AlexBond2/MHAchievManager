@@ -9,7 +9,6 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -17,6 +16,7 @@ namespace MHAchievManager
 {
     public partial class MainForm : Form
     {
+        private MenuStrip _menuStrip;
         private LayerListBox _infoLayersBox;
         private LayerListBox _stringLayersBox;
         private Panel _leftCategoryPanel;
@@ -46,21 +46,26 @@ namespace MHAchievManager
             UpkRepository.Initialize();
             InitializeComponent();
             SetApplicationIcon();
-            EnableDoubleBuffering(_categoryTreeView);
-            EnableDoubleBuffering(_achievementsTreeView);
-        }
 
-        private void EnableDoubleBuffering(TreeView tv)
-        {
-            typeof(TreeView).InvokeMember("DoubleBuffered",
-                BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.SetProperty,
-                null, tv, new object[] { true });
+            AutoScaleMode = AutoScaleMode.Dpi;
         }
 
         private void SetApplicationIcon()
         {
             Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
             _picIconPreview.Image = UpkRepository.Instance.GetBlankIcon();
+        }
+
+        protected override void OnShown(EventArgs e)
+        {
+            base.OnShown(e);
+
+            if (DeviceDpi != 96)
+            {
+                var currentFont = MainMenuStrip.Font;
+                MainMenuStrip.Font = new Font(currentFont.FontFamily, currentFont.Size, currentFont.Style);
+                MainMenuStrip.PerformLayout();
+            }
         }
 
         private void InitializeComponent()
@@ -71,9 +76,10 @@ namespace MHAchievManager
             DoubleBuffered = true;
             Font = new("Segoe UI", 9f, FontStyle.Regular);
 
-            var menuStrip = new MenuStrip();
+            _menuStrip = new MenuStrip { Font = Font };
             // --- File Menu ---
             var fileMenu = new ToolStripMenuItem("File");
+           
             fileMenu.DropDownItems.Add(new ToolStripMenuItem("Open Achievements...", null, OnOpenAchievementsClicked));
             fileMenu.DropDownItems.Add(new ToolStripMenuItem("Open Game Folder...", null, OnOpenGameFolderClicked));
             fileMenu.DropDownItems.Add(new ToolStripSeparator());
@@ -82,6 +88,23 @@ namespace MHAchievManager
                 Enabled = false
             };
             fileMenu.DropDownItems.Add(_saveChanges);
+
+            // --- Edit Menu ---
+            var editMenu = new ToolStripMenuItem("Edit");
+
+            var addMenu = new ToolStripMenuItem("Add New", null, OnAddNewAchievementClicked)
+            {
+                ShortcutKeys = Keys.Control | Keys.N
+            };
+
+            var searchMenu = new ToolStripMenuItem("Search...", null, OnSearchAchievementClicked)
+            {
+                ShortcutKeys = Keys.Control | Keys.F
+            };
+
+            editMenu.DropDownItems.Add(addMenu);
+            editMenu.DropDownItems.Add(new ToolStripSeparator());
+            editMenu.DropDownItems.Add(searchMenu);
 
             // --- Locale Menu ---
             _localeMenu = new ToolStripMenuItem("Locale");
@@ -107,34 +130,17 @@ namespace MHAchievManager
                 _localeMenu.DropDownItems.Add(item);
             }
 
-            // --- Edit Menu ---
-            var editMenu = new ToolStripMenuItem("Edit");
-
-            var addMenu = new ToolStripMenuItem("Add New", null, OnAddNewAchievementClicked)
-            {
-                ShortcutKeys = Keys.Control | Keys.N
-            };
-
-            var searchMenu = new ToolStripMenuItem("Search...", null, OnSearchAchievementClicked)
-            {
-                ShortcutKeys = Keys.Control | Keys.F
-            };
-
-            editMenu.DropDownItems.Add(addMenu);
-            editMenu.DropDownItems.Add(new ToolStripSeparator());
-            editMenu.DropDownItems.Add(searchMenu);
-
             // --- Help Menu ---
             var helpMenu = new ToolStripMenuItem("Help");
             helpMenu.DropDownItems.Add(new ToolStripMenuItem("About...", null, OnAboutClicked));
 
-            menuStrip.Items.Add(fileMenu);
-            menuStrip.Items.Add(editMenu);
-            menuStrip.Items.Add(_localeMenu);
-            menuStrip.Items.Add(helpMenu);
+            _menuStrip.Items.Add(fileMenu);
+            _menuStrip.Items.Add(editMenu);
+            _menuStrip.Items.Add(_localeMenu);
+            _menuStrip.Items.Add(helpMenu);
 
-            Controls.Add(menuStrip);
-            MainMenuStrip = menuStrip;
+            Controls.Add(_menuStrip);
+            MainMenuStrip = _menuStrip;
 
             var mainGrid = new TableLayoutPanel
             {
@@ -155,29 +161,11 @@ namespace MHAchievManager
             _leftCategoryPanel = new Panel { Dock = DockStyle.Fill, Padding = new Padding(5) };
             _rightInspectorPanel = new Panel { Dock = DockStyle.Fill, Padding = new Padding(5) };
 
-            _categoryTreeView = new TreeView
-            {
-                Dock = DockStyle.Fill,
-                BorderStyle = BorderStyle.None,
-                FullRowSelect = true,
-                ShowLines = false,
-                ItemHeight = 24,
-                DrawMode = TreeViewDrawMode.OwnerDrawText
-            };
-            _categoryTreeView.DrawNode += (s, e) => LayerTreeView.DrawNode(_categoryTreeView, s, e);
+            _categoryTreeView = new LayerTreeView();
             _categoryTreeView.AfterSelect += OnCategoryTreeNodeSelected;
             _leftCategoryPanel.Controls.Add(_categoryTreeView);
 
-            _achievementsTreeView = new TreeView
-            {
-                Dock = DockStyle.Fill,
-                BorderStyle = BorderStyle.None,
-                FullRowSelect = true,
-                ShowLines = false,
-                ItemHeight = 24,
-                DrawMode = TreeViewDrawMode.OwnerDrawText
-            };
-            _achievementsTreeView.DrawNode += (s, e) => LayerTreeView.DrawNode(_achievementsTreeView, s, e);
+            _achievementsTreeView = new LayerTreeView();
             InitializeRightInspectorPanel();
 
             mainGrid.Controls.Add(layersSidebar, 0, 0);
@@ -326,6 +314,17 @@ namespace MHAchievManager
             await LoadGameDataAsync(rootPath);
         }
 
+        public void ShowError(string text, string title = "Error")
+        {
+            TaskDialog.ShowDialog(this, new TaskDialogPage
+            {
+                Caption = title,
+                Text = text,
+                Icon = TaskDialogIcon.Error,
+                Buttons = { TaskDialogButton.OK }
+            });
+        }
+
         private async Task LoadGameDataAsync(string rootPath)
         {
             // Build relative paths
@@ -335,13 +334,13 @@ namespace MHAchievManager
             // Sanity checks
             if (!File.Exists(sipPath))
             {
-                MessageBox.Show($"Calligraphy database file not found:\n{sipPath}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                ShowError($"Calligraphy database file not found:\n{sipPath}");
                 return;
             }
 
             if (!Directory.Exists(upkFolder))
             {
-                MessageBox.Show($"UPK assets directory not found:\n{upkFolder}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                ShowError($"UPK assets directory not found:\n{upkFolder}");
                 return;
             }
 
@@ -381,7 +380,7 @@ namespace MHAchievManager
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"An error occurred while loading game assets:\n{ex.Message}", "Critical Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                ShowError($"An error occurred while loading game assets:\n{ex.Message}", "Critical Error");
             }
             finally
             {
@@ -522,7 +521,7 @@ namespace MHAchievManager
                 Dock = DockStyle.Left,
                 Width = 165,
             };
-            _infoLayersBox = new LayerListBox { Dock = DockStyle.Fill };
+            _infoLayersBox = new LayerListBox();
             _infoLayersBox.ItemCheckChanging += OnLayersChanging;
             _infoLayersBox.ItemCheckChanged += OnLayerCheckChanged;
             infoGroup.Controls.Add(_infoLayersBox);
@@ -533,7 +532,7 @@ namespace MHAchievManager
                 Dock = DockStyle.Left,
                 Width = 165,
             };
-            _stringLayersBox = new LayerListBox { Dock = DockStyle.Fill };
+            _stringLayersBox = new LayerListBox();
             _stringLayersBox.ItemCheckChanged += OnLayerCheckChanged;
             _stringLayersBox.ItemCheckChanging += OnLayersChanging;
             stringGroup.Controls.Add(_stringLayersBox);
@@ -552,7 +551,7 @@ namespace MHAchievManager
             }
         }
 
-        private static bool ConfirmDiscardUnsavedChanges()
+        private bool ConfirmDiscardUnsavedChanges()
         {
             bool isInfoDirty = AchievementRepository.Instance.IsInfoDirty;
             bool isStringDirty = AchievementRepository.Instance.IsStringDirty;
@@ -573,13 +572,15 @@ namespace MHAchievManager
             string message = $"Unsaved changes in {details} will be lost.\n\n" +
                               "Do you want to proceed?";
 
-            var result = MessageBox.Show(
-                message,
-                "Unsaved Changes Warning",
-                MessageBoxButtons.YesNo,
-                MessageBoxIcon.Warning);
-            
-            return result == DialogResult.Yes;
+            var result = TaskDialog.ShowDialog(this, new TaskDialogPage
+            {
+                Caption = "Unsaved Changes Warning",
+                Text = message,
+                Icon = TaskDialogIcon.Warning,
+                Buttons = { TaskDialogButton.Yes, TaskDialogButton.No }
+            });
+
+            return result == TaskDialogButton.Yes;
         }
 
         private void InitializeRightInspectorPanel()

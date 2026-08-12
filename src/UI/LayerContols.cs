@@ -3,6 +3,7 @@ using MHAchievManager.Services;
 using System;
 using System.ComponentModel;
 using System.Drawing;
+using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
 namespace MHAchievManager.UI
@@ -18,14 +19,108 @@ namespace MHAchievManager.UI
         public override string ToString() => DisplayName;
     }
 
-    public static class LayerTreeView
+    public class LayerTreeView : TreeView
     {
-        public static void DrawNode(TreeView treeView, object sender, DrawTreeNodeEventArgs e)
+        [DllImport("user32.dll", CharSet = CharSet.Auto)]
+        private static extern IntPtr SendMessage(IntPtr hWnd, int msg, IntPtr wParam, IntPtr lParam);
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto)]
+        private static extern int GetScrollPos(IntPtr hWnd, int nBar);
+
+        private const int SB_HORZ = 0;
+        private const int TV_FIRST = 0x1100;
+        private const int TVM_SETEXTENDEDSTYLE = TV_FIRST + 44;
+        private const int TVM_GETEXTENDEDSTYLE = TV_FIRST + 45;
+        private const int TVS_EX_DOUBLEBUFFER = 0x0004;
+
+        public LayerTreeView()
+        {
+            Dock = DockStyle.Fill;
+            BorderStyle = BorderStyle.None;
+            FullRowSelect = true;
+            ShowLines = false;
+            DrawMode = TreeViewDrawMode.OwnerDrawText;
+        }
+
+        protected override void OnHandleCreated(EventArgs e)
+        {
+            base.OnHandleCreated(e);
+
+            IntPtr styles = SendMessage(Handle, TVM_GETEXTENDEDSTYLE, IntPtr.Zero, IntPtr.Zero);
+            styles = new IntPtr(styles.ToInt64() | TVS_EX_DOUBLEBUFFER);
+            SendMessage(Handle, TVM_SETEXTENDEDSTYLE, IntPtr.Zero, styles);
+
+            UpdateIndent();
+        }
+
+        protected override void OnDpiChangedAfterParent(EventArgs e)
+        {
+            base.OnDpiChangedAfterParent(e);
+            UpdateIndent();
+        }
+
+        public int S(int pixels) => LogicalToDeviceUnits(pixels);
+
+        private void UpdateIndent()
+        {
+            Indent = S(19);
+            ItemHeight = S(24);
+        }
+
+        private int GetScrollX() => GetScrollPos(Handle, SB_HORZ);
+
+        private (Rectangle GlyphRect, int TextX) GetNodeLayout(TreeNode node, Rectangle nodeBounds)
+        {
+            int scrollX = GetScrollX();
+            int indent = (node.Level * S(19)) - scrollX;
+            int glyphSize = S(8);
+            int x = indent + S(6);
+            int y = nodeBounds.Y + (nodeBounds.Height / 2) - (glyphSize / 2);
+
+            Rectangle glyphRect = new(x, y, glyphSize, glyphSize);
+            int textX = indent + S(20);
+
+            return (glyphRect, textX);
+        }
+
+        protected override void OnMouseDown(MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Left)
+            {
+                var hit = HitTest(e.Location);
+                TreeNode node = hit.Node;
+
+                if (node != null)
+                {
+                    if (hit.Location == TreeViewHitTestLocations.PlusMinus)
+                    {
+                        base.OnMouseDown(e);
+                        return;
+                    }
+
+                    var (glyphRect, textX) = GetNodeLayout(node, node.Bounds);
+                    if (node.Nodes.Count > 0 && glyphRect.Contains(e.Location))
+                    {
+                        node.Toggle();
+                        return;
+                    }
+
+                    if (e.X >= textX)
+                    {
+                        SelectedNode = node;
+                    }
+                }
+            }
+
+            base.OnMouseDown(e);
+        }
+
+        protected override void OnDrawNode(DrawTreeNodeEventArgs e)
         {
             if (e.Node == null || e.Bounds.Width <= 0 || e.Bounds.Height <= 0)
                 return;
 
-            bool isSelected = (treeView.SelectedNode == e.Node);
+            bool isSelected = (SelectedNode == e.Node);
 
             Color bg = SystemColors.Window;
             Color fg = SystemColors.WindowText;
@@ -58,10 +153,12 @@ namespace MHAchievManager.UI
                 }
             }
 
+            int scrollX = GetScrollX();
+
             Rectangle fullRowBounds = new(
-                0,
+                -scrollX,
                 e.Bounds.Y,
-                treeView.ClientSize.Width,
+                Math.Max(ClientSize.Width + scrollX, e.Bounds.Width + scrollX),
                 e.Bounds.Height
             );
 
@@ -70,12 +167,13 @@ namespace MHAchievManager.UI
                 e.Graphics.FillRectangle(bgBrush, fullRowBounds);
             }
 
+            var (glyphRect, textX) = GetNodeLayout(e.Node, e.Bounds);
+
             if (e.Node.Nodes.Count > 0)
             {
-                int glyphSize = 8;
-                int indent = e.Node.Level * treeView.Indent;
-                int x = indent + 6;
-                int y = e.Bounds.Y + (e.Bounds.Height / 2) - (glyphSize / 2);
+                int glyphSize = S(8);
+                int x = glyphRect.X;
+                int y = glyphRect.Y;
 
                 if (e.Node.IsExpanded)
                 {
@@ -93,9 +191,9 @@ namespace MHAchievManager.UI
                 {
                     PointF[] closedTriangle =
                     [
-                        new (x + 1, y),
+                        new (x + S(1), y),
                         new (x + glyphSize, y + glyphSize / 2f),
-                        new (x + 1, y + glyphSize)
+                        new (x + S(1), y + glyphSize)
                     ];
 
                     using var strokePen = new Pen(ic, 1.2f);
@@ -110,16 +208,16 @@ namespace MHAchievManager.UI
                       | TextFormatFlags.GlyphOverhangPadding;
 
             Rectangle textRect = new(
-                e.Bounds.X,
+                textX,
                 e.Bounds.Y,
-                e.Bounds.Width + 10,
+                ClientSize.Width + scrollX - textX,
                 e.Bounds.Height
             );
 
             TextRenderer.DrawText(
                 e.Graphics,
                 e.Node.Text,
-                treeView.Font,
+                Font,
                 textRect,
                 fg,
                 flags);
@@ -139,22 +237,44 @@ namespace MHAchievManager.UI
 
         public LayerItem ActiveLayer { get; private set; }
 
+        private static readonly StringFormat TextFormat = new()
+        {
+            FormatFlags = StringFormatFlags.NoWrap,
+            LineAlignment = StringAlignment.Center
+        };
+
         public LayerListBox()
         {
             Dock = DockStyle.Fill;
             BorderStyle = BorderStyle.None;
             DrawMode = DrawMode.OwnerDrawFixed;
-            ItemHeight = 22;
-            Font = new(Font.FontFamily, 8.5f, FontStyle.Regular);
-
             SetStyle(ControlStyles.ResizeRedraw, true);
-            DoubleBuffered = true;
         }
 
         public void SetActiveLayer(LayerItem item)
         {
+            if (ActiveLayer == item) return;
             ActiveLayer = item;
             Invalidate();
+        }
+
+        protected override void OnHandleCreated(EventArgs e)
+        {
+            base.OnHandleCreated(e);
+            UpdateItemHeight();
+        }
+
+        protected override void OnDpiChangedAfterParent(EventArgs e)
+        {
+            base.OnDpiChangedAfterParent(e);
+            UpdateItemHeight();
+        }
+
+        public int S(int pixels) => LogicalToDeviceUnits(pixels);
+
+        private void UpdateItemHeight()
+        {
+            ItemHeight = S(22);
         }
 
         protected override void OnMouseDown(MouseEventArgs e)
@@ -166,7 +286,8 @@ namespace MHAchievManager.UI
 
             if (Items[index] is LayerItem item)
             {
-                Rectangle checkRect = new(2, index * ItemHeight + 3, 16, 16);
+                Rectangle itemRect = GetItemRectangle(index);
+                Rectangle checkRect = new(itemRect.X + S(3), itemRect.Y + S(3), S(16), S(16));
 
                 if (checkRect.Contains(e.Location))
                 {
@@ -174,20 +295,15 @@ namespace MHAchievManager.UI
 
                     bool newCheckState = !item.IsChecked;
 
-                    // Fire the pre-change event to check if the action should be canceled
                     if (ItemCheckChanging != null)
                     {
                         var args = new LayerItemCheckEventArgs(item, newCheckState);
-                        ItemCheckChanging.Invoke(this, args);
-
-                        // If any listener set Cancel = true, stop here!
+                        ItemCheckChanging?.Invoke(this, args);
                         if (args.Cancel) return;
                     }
 
-                    // Proceed with toggling state
                     item.IsChecked = newCheckState;
-                    Invalidate();
-
+                    Invalidate(itemRect);
                     ItemCheckChanged?.Invoke(this, EventArgs.Empty);
                 }
             }
@@ -199,18 +315,16 @@ namespace MHAchievManager.UI
 
             if (SelectedItem is LayerItem item)
             {
-                ActiveLayer = item;
-                Invalidate();
+                SetActiveLayer(item);
             }
         }
 
         protected override void OnDrawItem(DrawItemEventArgs e)
         {
             if (e.Index < 0 || e.Index >= Items.Count) return;
-
             if (Items[e.Index] is not LayerItem item) return;
 
-            bool isActiveEdit = item == ActiveLayer;
+            bool isActiveEdit = (item == ActiveLayer);
 
             Color currentBg = SystemColors.Window;
             Color color = SystemColors.WindowText;
@@ -231,7 +345,7 @@ namespace MHAchievManager.UI
                 e.Graphics.FillRectangle(bgBrush, e.Bounds);
             }
 
-            Rectangle checkRect = new(e.Bounds.X + 3, e.Bounds.Y + 3, 14, 14);
+            Rectangle checkRect = new(e.Bounds.X + S(3), e.Bounds.Y + S(3), S(14), S(14));
             ButtonState checkState = item.IsChecked ? ButtonState.Checked : ButtonState.Normal;
 
             if (item.IsBase || item.IsNew)
@@ -241,16 +355,10 @@ namespace MHAchievManager.UI
 
             ControlPaint.DrawCheckBox(e.Graphics, checkRect, checkState);
 
-            string textToDraw = item.DisplayName;
-            Rectangle textRect = new(e.Bounds.X + 22, e.Bounds.Y + 2, e.Bounds.Width - 24, e.Bounds.Height);
+            Rectangle textRect = new(e.Bounds.X + S(22), e.Bounds.Y, e.Bounds.Width - S(24), e.Bounds.Height);
 
             using var textBrush = new SolidBrush(color);
-            using var format = new StringFormat
-            {
-                FormatFlags = StringFormatFlags.NoWrap
-            };
-
-            e.Graphics.DrawString(textToDraw, e.Font ?? Theme.MainFont, textBrush, textRect, format);
+            e.Graphics.DrawString(item.DisplayName, Font ?? Theme.MainFont, textBrush, textRect, TextFormat);
         }
-    }    
+    }
 }

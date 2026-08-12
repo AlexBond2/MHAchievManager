@@ -8,7 +8,9 @@ namespace MHAchievManager.UI
 {
     public abstract class GenericSearchForm : Form
     {
-        protected virtual int MaxResults => 150;
+        protected virtual int MaxResults => 150; 
+        public Point SearchLocation = new (63, 12);
+        public Point GridLocation = new (12, 45);
         private bool _isProgrammaticChange = false;
 
         protected Label lblSearch;
@@ -26,6 +28,7 @@ namespace MHAchievManager.UI
         public GenericSearchForm()
         {
             InitializeComponent();
+            AutoScaleMode = AutoScaleMode.Dpi;
         }
 
         private void SetupSearchClearButton()
@@ -37,7 +40,7 @@ namespace MHAchievManager.UI
                 ForeColor = Color.Gray,
                 Width = 23,
                 Height = 23,
-                Location = new Point(txtSearch.ClientSize.Width - txtSearch.Height, -2),
+                Location = new Point(txtSearch.ClientSize.Width - 23, -2),
                 Cursor = Cursors.Hand,
                 FlatStyle = FlatStyle.Flat,
                 Visible = false,
@@ -62,12 +65,14 @@ namespace MHAchievManager.UI
 
         private void InitializeComponent()
         {
-            lblSearch = new Label { Text = "Search:", Location = new Point(12, 15), AutoSize = true };
+            lblSearch = new Label { 
+                Text = "Search:",
+                Location = new Point(12, 15),
+                AutoSize = true
+            };
 
             txtSearch = new TextBox
             {
-                Location = new Point(63, 12),
-                Size = new Size(545, 23),
                 Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right
             };
 
@@ -75,8 +80,6 @@ namespace MHAchievManager.UI
 
             gridResults = new DataGridView
             {
-                Location = new Point(12, 45),
-                Size = new Size(596, 348),
                 AllowUserToAddRows = false,
                 AllowUserToDeleteRows = false,
                 AllowUserToResizeRows = false,
@@ -99,15 +102,13 @@ namespace MHAchievManager.UI
             lblStatus = new Label
             {
                 Text = "",
-                Location = new Point(12, 407),
-                Size = new Size(320, 17),
                 TextAlign = ContentAlignment.MiddleLeft,
                 Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right
             };
 
-            btnCreateNew = CreateButton("Add New", new Point(356, 403), btnCreateNew_Click);
-            btnSave = CreateButton("Ok", new Point(442, 403), btnSave_Click);
-            btnCancel = CreateButton("Cancel", new Point(528, 403), btnCancel_Click);
+            btnCreateNew = CreateButton("Add New", btnCreateNew_Click);
+            btnSave = CreateButton("Ok", btnSave_Click);
+            btnCancel = CreateButton("Cancel", btnCancel_Click);
 
             txtSearch.TextChanged += txtSearch_TextChanged;
             gridResults.CellClick += gridResults_CellClick;
@@ -119,7 +120,6 @@ namespace MHAchievManager.UI
 
             ClientSize = new Size(620, 440);
             MinimumSize = new Size(553, 342);
-            AutoScaleMode = AutoScaleMode.Inherit;
             FormBorderStyle = FormBorderStyle.Sizable;
             StartPosition = FormStartPosition.CenterParent;
             MaximizeBox = false;
@@ -131,17 +131,90 @@ namespace MHAchievManager.UI
 
             SetupForm();
             SetupColumns(gridResults);
+            LayoutControls();
 
             AcceptButton = btnSave;
             CancelButton = btnCancel;
         }
 
-        private static Button CreateButton(string text, Point location, EventHandler onClick)
+        protected override void OnDpiChanged(DpiChangedEventArgs e)
+        {
+            base.OnDpiChanged(e);
+            LayoutControls();
+        }
+
+        private int S(int px) => LogicalToDeviceUnits(px);
+
+        private void UpdateColumnMinimumWidths()
+        {
+            if (gridResults == null || gridResults.IsDisposed) return;
+
+            gridResults.RowTemplate.Height = S(22);
+            gridResults.SuspendLayout();
+
+            try
+            {
+                foreach (DataGridViewColumn col in gridResults.Columns)
+                {
+                    if (col.Tag is int baseMinWidth && baseMinWidth > 0)
+                    {
+                        col.AutoSizeMode = DataGridViewAutoSizeColumnMode.None;
+                        col.MinimumWidth = S(baseMinWidth);
+                        col.AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCellsExceptHeader;
+                    }
+                }
+
+                if (gridResults.DataSource != null)
+                {
+                    var ds = gridResults.DataSource;
+                    gridResults.DataSource = null;
+                    gridResults.DataSource = ds;
+                }
+                else if (gridResults.Rows.Count > 0)
+                {
+                    gridResults.Invalidate();
+                }
+            }
+            finally
+            {
+                gridResults.ResumeLayout(true);
+            }
+        }
+
+        private void LayoutControls()
+        {
+            int margin = S(12);
+            int spacing = S(6);
+            int bottomButtonHeight = S(25);
+            int bottomRowHeight = S(35);
+
+            txtSearch.Location = new Point(S(SearchLocation.X), S(SearchLocation.Y));
+            txtSearch.Height = S(23);
+            txtSearch.Width = ClientSize.Width - txtSearch.Left - margin;
+
+            gridResults.Location = new Point(S(GridLocation.X), S(GridLocation.Y));
+            gridResults.Size = new Size(
+                ClientSize.Width - margin * 2,
+                ClientSize.Height - S(GridLocation.Y) - bottomRowHeight - margin
+            );
+
+            UpdateColumnMinimumWidths();
+
+            int bottomY = ClientSize.Height - margin - bottomButtonHeight;
+
+            btnCancel.Location = new Point(ClientSize.Width - margin - btnCancel.Width, bottomY);
+            btnSave.Location = new Point(btnCancel.Left - spacing - btnSave.Width, bottomY);
+            btnCreateNew.Location = new Point(btnSave.Left - spacing - btnCreateNew.Width, bottomY);
+
+            lblStatus.Location = new Point(margin, bottomY + S(1));
+            lblStatus.Width = btnCreateNew.Left - margin - S(10);
+        }
+
+        private static Button CreateButton(string text, EventHandler onClick)
         {
             var btn = new Button
             {
                 Text = text,
-                Location = location,
                 Size = new Size(80, 25),
                 Anchor = AnchorStyles.Bottom | AnchorStyles.Right,
                 UseVisualStyleBackColor = true
@@ -164,8 +237,13 @@ namespace MHAchievManager.UI
             // Check if database is loaded before proceeding
             if (!CheckDatabaseLoaded())
             {
-                MessageBox.Show("Database is not loaded! Please open Game Folder before searching.",
-                                "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                TaskDialog.ShowDialog(this, new TaskDialogPage
+                {
+                    Caption = "Warning",
+                    Text = "Database is not loaded! Please open Game Folder before searching.",
+                    Icon = TaskDialogIcon.Warning,
+                    Buttons = { TaskDialogButton.OK }
+                });
                 DialogResult = DialogResult.Abort;
                 Close();
                 return;

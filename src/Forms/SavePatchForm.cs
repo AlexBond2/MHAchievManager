@@ -37,6 +37,8 @@ namespace MHAchievManager.Forms
             _report = report;
             InitializeComponent();
             BindData();
+
+            AutoScaleMode = AutoScaleMode.Dpi;
         }
 
         private void InitializeComponent()
@@ -242,7 +244,13 @@ namespace MHAchievManager.Forms
         {
             if (string.IsNullOrWhiteSpace(txtInfoPath.Text) || string.IsNullOrWhiteSpace(txtStringPath.Text))
             {
-                MessageBox.Show("File paths cannot be empty!", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                TaskDialog.ShowDialog(this, new TaskDialogPage
+                {
+                    Caption = "Validation Error",
+                    Text = "File paths cannot be empty!",
+                    Icon = TaskDialogIcon.Error,
+                    Buttons = { TaskDialogButton.OK }
+                });
                 DialogResult = DialogResult.None; // Prevent closing
             }
         }

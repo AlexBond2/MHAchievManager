@@ -51,7 +51,7 @@ namespace MHAchievManager.Forms
                 Name = "colId",
                 DataPropertyName = "Id",
                 HeaderText = "ID",
-                Width = 80,
+                Tag = 80,
                 DefaultCellStyle = new DataGridViewCellStyle { ForeColor = Color.DimGray }
             });
 
@@ -68,7 +68,7 @@ namespace MHAchievManager.Forms
                 Name = "colCategory",
                 HeaderText = "Category",
                 DataPropertyName = "Category",
-                Width = 160,
+                Tag = 160,
                 DefaultCellStyle = new DataGridViewCellStyle { ForeColor = Color.Gray }
             });
         }

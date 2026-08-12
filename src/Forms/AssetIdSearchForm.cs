@@ -47,10 +47,9 @@ namespace MHAchievManager.Forms
             Controls.Add(picPreview);
 
             lblSearch.Location = new Point(60, 21);
-            txtSearch.Location = new Point(115, 18);
-            txtSearch.Size = new Size(493, 23);
-            gridResults.Location = new Point(12, 58);
-            gridResults.Size = new Size(596, 335);
+
+            SearchLocation = new Point(115, 18);
+            GridLocation = new Point(12, 58);
         }
 
         protected override void SetInitialSearchText()
@@ -73,7 +72,8 @@ namespace MHAchievManager.Forms
                 Name = "colId",
                 DataPropertyName = "NumericId",
                 HeaderText = "Asset ID",
-                Width = 140,
+                Tag = 140,
+                AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCellsExceptHeader,
                 DefaultCellStyle = new DataGridViewCellStyle { ForeColor = Color.DimGray }
             });
 
@@ -92,7 +92,8 @@ namespace MHAchievManager.Forms
                 Name = "colType",
                 DataPropertyName = "TypeName",
                 HeaderText = "Type",
-                Width = 130,
+                Tag = 130,
+                AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCellsExceptHeader,
                 DefaultCellStyle = new DataGridViewCellStyle { ForeColor = Color.DarkSlateGray }
             });
         }

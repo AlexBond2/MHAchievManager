@@ -48,6 +48,8 @@ namespace MHAchievManager.Forms
             Controls.Add(btnOk);
 
             AcceptButton = btnOk;
+
+            AutoScaleMode = AutoScaleMode.Dpi;
         }
 
         public TimeSpan GetSelectedTimeSpan()
