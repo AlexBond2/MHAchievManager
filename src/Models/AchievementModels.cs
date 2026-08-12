@@ -279,17 +279,19 @@ namespace MHAchievManager.Models
         [JsonIgnore]
         [DisplayName("Event Data")]
         [TypeConverter(typeof(EventDataArrayConverter))]
-        [Editor(typeof(EventDataCollectionEditor), typeof(UITypeEditor))]
+        [CollectionLimit(3)]
+        [Editor(typeof(ArrayCollectionEditor<EventData>), typeof(UITypeEditor))]
         public EventData[] EventDataArray
         {
             get => EventData?.ToArray();
-            set => EventData = value != null ? [.. value.Take(3)] : [];
+            set => EventData = value != null ? [.. value] : [];
         }
 
         [JsonIgnore]
         [DisplayName("Event Context")]
         [TypeConverter(typeof(EventContextArrayConverter))]
-        [Editor(typeof(EventContextCollectionEditor), typeof(UITypeEditor))]
+        [CollectionLimit(9)]
+        [Editor(typeof(ArrayCollectionEditor<EventContext>), typeof(UITypeEditor))]
         public EventContext[] EventContextArray
         {
             get => EventContext?.ToArray();

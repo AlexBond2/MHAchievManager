@@ -1,10 +1,9 @@
 ﻿using MHAchievManager.Forms;
 using OpenCalligraphy.Core.GameData;
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.ComponentModel.Design;
 using System.Drawing.Design;
+using System.Linq;
 using System.Windows.Forms;
 using System.Windows.Forms.Design;
 
@@ -64,31 +63,39 @@ namespace MHAchievManager.Models
         }
     }
 
-    public class EventDataCollectionEditor : CollectionEditor
+    [AttributeUsage(AttributeTargets.Property)]
+    public class CollectionLimitAttribute(int maxItems) : Attribute
     {
-        public EventDataCollectionEditor() : base(typeof(List<EventData>)) { }
-        protected override Type CreateCollectionItemType() => typeof(EventData);
-        protected override object CreateInstance(Type itemType) => new EventData();
-
-        public override object EditValue(ITypeDescriptorContext context, IServiceProvider provider, object value)
-        {
-            var list = value is EventData[] arr ? [.. arr] : new List<EventData>();
-            var resultList = base.EditValue(context, provider, list) as List<EventData>;
-            return resultList?.ToArray() ?? [];
-        }
+        public int MaxItems { get; } = maxItems;
     }
 
-    public class EventContextCollectionEditor : CollectionEditor
+    public class ArrayCollectionEditor<T> : UITypeEditor where T : class, new()
     {
-        public EventContextCollectionEditor() : base(typeof(List<EventContext>)) { }
-        protected override Type CreateCollectionItemType() => typeof(EventContext);
-        protected override object CreateInstance(Type itemType) => new EventContext();
+        public override UITypeEditorEditStyle GetEditStyle(ITypeDescriptorContext context)
+        {
+            return UITypeEditorEditStyle.Modal;
+        }
 
         public override object EditValue(ITypeDescriptorContext context, IServiceProvider provider, object value)
         {
-            var list = value is EventContext[] arr ? [.. arr] : new List<EventContext>();
-            var resultList = base.EditValue(context, provider, list) as List<EventContext>;
-            return resultList?.ToArray() ?? [];
+            var service = (IWindowsFormsEditorService)provider?.GetService(typeof(IWindowsFormsEditorService));
+            if (service == null) return value;
+
+            var limitAttr = context.PropertyDescriptor.Attributes[typeof(CollectionLimitAttribute)] as CollectionLimitAttribute;
+            int maxItems = limitAttr?.MaxItems ?? 10;
+
+            var sourceArray = value as T[] ?? [];
+            var workingList = sourceArray.ToList();
+
+            using (var form = new CollectionForm<T>(workingList, maxItems))
+            {
+                if (service.ShowDialog(form) == DialogResult.OK)
+                {
+                    return workingList.ToArray();
+                }
+            }
+
+            return value;
         }
     }
 
