@@ -377,6 +377,8 @@ namespace MHAchievManager
                 int loadedObjects = UpkRepository.Instance.LoadedExportsCount;
                 UpdateObjectsCounts(loadedObjects);
                 HideProgress("Game data loaded successfully.");
+
+                RefreshTreesAndRestoreSelection();
             }
             catch (Exception ex)
             {
