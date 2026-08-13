@@ -47,6 +47,7 @@ namespace MHAchievManager
             InitializeComponent();
             SetApplicationIcon();
 
+            AutoScaleDimensions = new SizeF(96F, 96F);
             AutoScaleMode = AutoScaleMode.Dpi;
         }
 

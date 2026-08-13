@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using System.Drawing;
 using System.Windows.Forms;
 
 namespace MHAchievManager.Forms
@@ -10,6 +11,8 @@ namespace MHAchievManager.Forms
         public CollectionForm(IList list, int maxItems)
         {
             MaxItems = maxItems;
+
+            AutoScaleDimensions = new SizeF(96F, 96F);
             AutoScaleMode = AutoScaleMode.Dpi;
 
             Text = $"Collection {typeof(T).Name}";

@@ -37,8 +37,6 @@ namespace MHAchievManager.Forms
             if (_initialId != 0)
             {
                 txtSearch.Text = _initialId.ToString();
-                txtSearch.SelectionStart = txtSearch.Text.Length;
-                txtSearch.SelectionLength = 0;
             }
         }
 

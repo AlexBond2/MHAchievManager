@@ -49,6 +49,7 @@ namespace MHAchievManager.Forms
 
             AcceptButton = btnOk;
 
+            AutoScaleDimensions = new SizeF(96F, 96F);
             AutoScaleMode = AutoScaleMode.Dpi;
         }
 

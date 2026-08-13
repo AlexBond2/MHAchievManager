@@ -18,6 +18,8 @@ namespace MHAchievManager.Forms
         {
             InitializeComponent();
             SetupAboutIcon();
+
+            AutoScaleDimensions = new SizeF(96F, 96F);
             AutoScaleMode = AutoScaleMode.Dpi;
         }
 

@@ -39,8 +39,6 @@ namespace MHAchievManager.Forms
         protected override void SetInitialSearchText()
         {
             txtSearch.Text = ((ulong)_initialId).ToString();
-            txtSearch.SelectionStart = txtSearch.Text.Length;
-            txtSearch.SelectionLength = 0;
         }
 
         protected override void SetupColumns(DataGridView grid)

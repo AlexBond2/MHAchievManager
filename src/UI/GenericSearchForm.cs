@@ -28,6 +28,8 @@ namespace MHAchievManager.UI
         public GenericSearchForm()
         {
             InitializeComponent();
+
+            AutoScaleDimensions = new SizeF(96F, 96F);
             AutoScaleMode = AutoScaleMode.Dpi;
         }
 
@@ -56,8 +58,8 @@ namespace MHAchievManager.UI
 
             btnClearSearch.Click += (s, e) =>
             {
-                txtSearch.Clear();
                 txtSearch.Focus();
+                txtSearch.Clear();
             };
 
             txtSearch.Controls.Add(btnClearSearch);
@@ -131,10 +133,21 @@ namespace MHAchievManager.UI
 
             SetupForm();
             SetupColumns(gridResults);
-            LayoutControls();
 
             AcceptButton = btnSave;
             CancelButton = btnCancel;
+        }
+
+        protected override void OnShown(EventArgs e)
+        {
+            base.OnShown(e);
+
+            LayoutControls();
+
+            SetInitialSearchText();
+            RefreshSearchList(txtSearch.Text);
+
+            UpdateSearchFromSelection();
         }
 
         protected override void OnDpiChanged(DpiChangedEventArgs e)
@@ -250,11 +263,6 @@ namespace MHAchievManager.UI
             }
             
             EnableDoubleBuffering(gridResults);
-
-            SetInitialSearchText();
-            RefreshSearchList(txtSearch.Text);
-
-            UpdateSearchFromSelection();
         }
 
         private void txtSearch_TextChanged(object sender, EventArgs e)

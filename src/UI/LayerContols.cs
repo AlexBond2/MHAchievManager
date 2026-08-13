@@ -237,18 +237,13 @@ namespace MHAchievManager.UI
 
         public LayerItem ActiveLayer { get; private set; }
 
-        private static readonly StringFormat TextFormat = new()
-        {
-            FormatFlags = StringFormatFlags.NoWrap,
-            LineAlignment = StringAlignment.Center
-        };
-
         public LayerListBox()
         {
             Dock = DockStyle.Fill;
             BorderStyle = BorderStyle.None;
             DrawMode = DrawMode.OwnerDrawFixed;
             SetStyle(ControlStyles.ResizeRedraw, true);
+            DoubleBuffered = true;
         }
 
         public void SetActiveLayer(LayerItem item)
@@ -357,8 +352,8 @@ namespace MHAchievManager.UI
 
             Rectangle textRect = new(e.Bounds.X + S(22), e.Bounds.Y, e.Bounds.Width - S(24), e.Bounds.Height);
 
-            using var textBrush = new SolidBrush(color);
-            e.Graphics.DrawString(item.DisplayName, Font ?? Theme.MainFont, textBrush, textRect, TextFormat);
+            TextFormatFlags flags = TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.SingleLine;
+            TextRenderer.DrawText(e.Graphics, item.DisplayName, Font ?? Theme.MainFont, textRect, color, flags);
         }
     }
 }

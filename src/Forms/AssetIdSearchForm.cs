@@ -58,7 +58,6 @@ namespace MHAchievManager.Forms
             if (numericVal != 0)
             {
                 txtSearch.Text = numericVal.ToString();
-                txtSearch.SelectionStart = txtSearch.Text.Length;
             }
         }
 

@@ -39,6 +39,7 @@ namespace MHAchievManager.Forms
             SetupDynamicLanguageTabs();
             LoadLocaleData();
 
+            AutoScaleDimensions = new SizeF(96F, 96F);
             AutoScaleMode = AutoScaleMode.Dpi;
         }
 
@@ -64,8 +65,6 @@ namespace MHAchievManager.Forms
                 Text = "...",
                 Location = new Point(510, 6)
             };
-
-            AlignButtonToTextBox();
 
             tabLanguages = new TabControl
             {
@@ -118,6 +117,12 @@ namespace MHAchievManager.Forms
         {
             btnCreateNew.Height = txtSelectedId.Height + 2;
             btnCreateNew.Width = LogicalToDeviceUnits(61);
+        }
+
+        protected override void OnShown(EventArgs e)
+        {
+            base.OnShown(e);
+            AlignButtonToTextBox();
         }
 
         protected override void OnDpiChanged(DpiChangedEventArgs e)
